@@ -1,0 +1,504 @@
+import { Link, useForm } from '@inertiajs/react';
+import type { FormEvent } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import AdminHeader from '@/components/admin/admin-header';
+import Field from '@/components/admin/field';
+import RichTextEditor from '@/components/admin/rich-text-editor';
+import { card, primaryButton, secondaryButton, textInput } from '@/lib/ui';
+import { autosave, index, store, update } from '@/routes/admin/articles';
+
+const AUTOSAVE_INTERVAL_MS = 30000;
+const EXCERPT_MAX_LENGTH = 300;
+
+type ArticleData = {
+    id: number;
+    title: string;
+    slug: string;
+    dateline: string | null;
+    excerpt: string | null;
+    body: string;
+    cover_url: string | null;
+    cover_caption: string | null;
+    cover_credit: string | null;
+    category_id: number;
+    tags: string[];
+    is_headline: boolean;
+    is_trending: boolean;
+    is_breaking: boolean;
+    status: string;
+    published_at: string | null;
+    meta_title: string | null;
+    meta_description: string | null;
+    preview_url: string;
+};
+
+type ArticleFormProps = {
+    article: ArticleData | null;
+    categories: { id: number; name: string }[];
+    statuses: { value: string; label: string }[];
+    canPublish: boolean;
+};
+
+const AUTOSAVABLE_STATUSES = ['draft', 'review'];
+
+function csrfHeader(): Record<string, string> {
+    const match = document.cookie.match(/(?:^|; )XSRF-TOKEN=([^;]+)/);
+
+    return {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest',
+        'X-XSRF-TOKEN': match ? decodeURIComponent(match[1]) : '',
+    };
+}
+
+export default function AdminArticleForm({
+    article,
+    categories,
+    statuses,
+    canPublish,
+}: ArticleFormProps) {
+    const form = useForm({
+        _method: article ? 'put' : 'post',
+        title: article?.title ?? '',
+        slug: article?.slug ?? '',
+        dateline: article?.dateline ?? '',
+        excerpt: article?.excerpt ?? '',
+        body: article?.body ?? '',
+        cover: null as File | null,
+        cover_caption: article?.cover_caption ?? '',
+        cover_credit: article?.cover_credit ?? '',
+        category_id: article?.category_id ?? categories[0]?.id ?? '',
+        tags: article?.tags ?? ([] as string[]),
+        is_headline: article?.is_headline ?? false,
+        is_trending: article?.is_trending ?? false,
+        is_breaking: article?.is_breaking ?? false,
+        status: article?.status ?? 'draft',
+        published_at: article?.published_at ?? '',
+        meta_title: article?.meta_title ?? '',
+        meta_description: article?.meta_description ?? '',
+    });
+
+    const { data, setData, errors, processing } = form;
+    const [tagInput, setTagInput] = useState((article?.tags ?? []).join(', '));
+    const [savedAt, setSavedAt] = useState<string | null>(null);
+    const latest = useRef(data);
+
+    useEffect(() => {
+        latest.current = data;
+    }, [data]);
+
+    useEffect(() => {
+        if (!article || !AUTOSAVABLE_STATUSES.includes(article.status)) {
+            return;
+        }
+
+        const interval = window.setInterval(() => {
+            const { title, dateline, excerpt, body } = latest.current;
+
+            if (title.trim() === '') {
+                return;
+            }
+
+            void fetch(autosave.url(article.id), {
+                method: 'PUT',
+                credentials: 'same-origin',
+                headers: csrfHeader(),
+                body: JSON.stringify({ title, dateline, excerpt, body }),
+            })
+                .then((response) => (response.ok ? response.json() : null))
+                .then((result: { saved_at: string } | null) => {
+                    if (result) {
+                        setSavedAt(result.saved_at);
+                    }
+                })
+                .catch(() => undefined);
+        }, AUTOSAVE_INTERVAL_MS);
+
+        return () => window.clearInterval(interval);
+    }, [article]);
+
+    const submit = (event: FormEvent): void => {
+        event.preventDefault();
+        form.post(article ? update.url(article.id) : store.url(), {
+            forceFormData: true,
+            preserveScroll: true,
+        });
+    };
+
+    const seoTitle = data.meta_title || data.title || 'Judul artikel';
+    const seoDescription =
+        data.meta_description ||
+        data.excerpt ||
+        'Ringkasan artikel akan tampil di sini.';
+
+    return (
+        <>
+            <AdminHeader
+                title={article ? 'Edit Artikel' : 'Tulis Artikel'}
+                description={
+                    savedAt
+                        ? `Draf tersimpan otomatis pukul ${savedAt}`
+                        : undefined
+                }
+                actions={
+                    <>
+                        <Link href={index()} className={secondaryButton}>
+                            Kembali
+                        </Link>
+                        {article && (
+                            <a
+                                href={article.preview_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className={secondaryButton}
+                            >
+                                Pratinjau
+                            </a>
+                        )}
+                    </>
+                }
+            />
+
+            <form
+                onSubmit={submit}
+                className="grid grid-cols-1 gap-6 lg:grid-cols-12"
+            >
+                <div className="space-y-4 lg:col-span-8">
+                    <div className={`${card} space-y-4 p-5`}>
+                        <Field id="title" label="Judul" error={errors.title}>
+                            <input
+                                id="title"
+                                value={data.title}
+                                onChange={(event) =>
+                                    setData('title', event.target.value)
+                                }
+                                className={textInput}
+                                required
+                            />
+                        </Field>
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                            <Field
+                                id="slug"
+                                label="Slug"
+                                error={errors.slug}
+                                hint="Kosongkan agar dibuat otomatis dari judul."
+                            >
+                                <input
+                                    id="slug"
+                                    value={data.slug}
+                                    onChange={(event) =>
+                                        setData('slug', event.target.value)
+                                    }
+                                    className={textInput}
+                                />
+                            </Field>
+                            <Field
+                                id="dateline"
+                                label="Dateline"
+                                error={errors.dateline}
+                                hint="Contoh: JAKARTA"
+                            >
+                                <input
+                                    id="dateline"
+                                    value={data.dateline}
+                                    onChange={(event) =>
+                                        setData('dateline', event.target.value)
+                                    }
+                                    className={textInput}
+                                />
+                            </Field>
+                        </div>
+                        <Field
+                            id="excerpt"
+                            label={`Ringkasan (${data.excerpt.length}/${EXCERPT_MAX_LENGTH})`}
+                            error={errors.excerpt}
+                        >
+                            <textarea
+                                id="excerpt"
+                                rows={3}
+                                maxLength={EXCERPT_MAX_LENGTH}
+                                value={data.excerpt}
+                                onChange={(event) =>
+                                    setData('excerpt', event.target.value)
+                                }
+                                className={textInput}
+                            />
+                        </Field>
+                        <div>
+                            <span
+                                id="body-label"
+                                className="mb-1.5 block text-xs font-bold text-slate-700 dark:text-slate-200"
+                            >
+                                Isi Artikel
+                            </span>
+                            <RichTextEditor
+                                value={data.body}
+                                onChange={(html) => setData('body', html)}
+                                labelId="body-label"
+                            />
+                            {errors.body && (
+                                <p className="mt-1 text-xs text-rose-600">
+                                    {errors.body}
+                                </p>
+                            )}
+                        </div>
+                    </div>
+
+                    <div className={`${card} space-y-4 p-5`}>
+                        <h2 className="text-sm font-extrabold text-slate-900 dark:text-white">
+                            SEO
+                        </h2>
+                        <Field
+                            id="meta_title"
+                            label="Meta Title"
+                            error={errors.meta_title}
+                        >
+                            <input
+                                id="meta_title"
+                                value={data.meta_title}
+                                onChange={(event) =>
+                                    setData('meta_title', event.target.value)
+                                }
+                                className={textInput}
+                            />
+                        </Field>
+                        <Field
+                            id="meta_description"
+                            label="Meta Description"
+                            error={errors.meta_description}
+                        >
+                            <textarea
+                                id="meta_description"
+                                rows={2}
+                                value={data.meta_description}
+                                onChange={(event) =>
+                                    setData(
+                                        'meta_description',
+                                        event.target.value,
+                                    )
+                                }
+                                className={textInput}
+                            />
+                        </Field>
+                        <div className="rounded-xl border border-slate-200 p-3 dark:border-slate-700">
+                            <p className="mb-1 text-[11px] font-bold text-slate-500 dark:text-slate-400">
+                                Pratinjau Google
+                            </p>
+                            <p className="truncate text-base text-blue-700 dark:text-sky-400">
+                                {seoTitle} - BeresinNews
+                            </p>
+                            <p className="truncate text-xs text-emerald-700 dark:text-emerald-400">
+                                /{data.slug || 'slug-artikel'}
+                            </p>
+                            <p className="line-clamp-2 text-xs text-slate-600 dark:text-slate-300">
+                                {seoDescription}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <aside className="space-y-4 lg:col-span-4">
+                    <div className={`${card} space-y-4 p-5`}>
+                        <Field
+                            id="status"
+                            label="Status"
+                            error={errors.status}
+                            hint={
+                                canPublish
+                                    ? undefined
+                                    : 'Ajukan ke Tinjauan agar redaktur dapat menerbitkan.'
+                            }
+                        >
+                            <select
+                                id="status"
+                                value={data.status}
+                                onChange={(event) =>
+                                    setData('status', event.target.value)
+                                }
+                                className={textInput}
+                            >
+                                {statuses.map((status) => (
+                                    <option
+                                        key={status.value}
+                                        value={status.value}
+                                    >
+                                        {status.label}
+                                    </option>
+                                ))}
+                            </select>
+                        </Field>
+                        {canPublish && (
+                            <Field
+                                id="published_at"
+                                label="Jadwal Terbit"
+                                error={errors.published_at}
+                                hint="Wajib untuk status Terjadwal. Waktu dalam WIB."
+                            >
+                                <input
+                                    id="published_at"
+                                    type="datetime-local"
+                                    value={data.published_at}
+                                    onChange={(event) =>
+                                        setData(
+                                            'published_at',
+                                            event.target.value,
+                                        )
+                                    }
+                                    className={textInput}
+                                />
+                            </Field>
+                        )}
+                        <button
+                            type="submit"
+                            disabled={processing}
+                            className={`${primaryButton} w-full`}
+                        >
+                            {processing ? 'Menyimpan...' : 'Simpan Artikel'}
+                        </button>
+                    </div>
+
+                    <div className={`${card} space-y-4 p-5`}>
+                        <Field
+                            id="category_id"
+                            label="Kategori"
+                            error={errors.category_id}
+                        >
+                            <select
+                                id="category_id"
+                                value={data.category_id}
+                                onChange={(event) =>
+                                    setData(
+                                        'category_id',
+                                        Number(event.target.value),
+                                    )
+                                }
+                                className={textInput}
+                            >
+                                {categories.map((category) => (
+                                    <option
+                                        key={category.id}
+                                        value={category.id}
+                                    >
+                                        {category.name}
+                                    </option>
+                                ))}
+                            </select>
+                        </Field>
+                        <Field
+                            id="tags"
+                            label="Tag"
+                            error={errors.tags}
+                            hint="Pisahkan dengan koma. Tag baru otomatis dibuat."
+                        >
+                            <input
+                                id="tags"
+                                value={tagInput}
+                                onChange={(event) => {
+                                    setTagInput(event.target.value);
+                                    setData(
+                                        'tags',
+                                        event.target.value
+                                            .split(',')
+                                            .map((tag) => tag.trim())
+                                            .filter(Boolean),
+                                    );
+                                }}
+                                className={textInput}
+                            />
+                        </Field>
+                        {canPublish && (
+                            <fieldset className="space-y-2 text-xs text-slate-700 dark:text-slate-200">
+                                <legend className="mb-1 font-bold">Opsi</legend>
+                                {(
+                                    [
+                                        ['is_headline', 'Headline'],
+                                        ['is_trending', 'Trending'],
+                                        ['is_breaking', 'Breaking'],
+                                    ] as const
+                                ).map(([key, label]) => (
+                                    <label
+                                        key={key}
+                                        className="flex items-center gap-2"
+                                    >
+                                        <input
+                                            type="checkbox"
+                                            checked={data[key]}
+                                            onChange={(event) =>
+                                                setData(
+                                                    key,
+                                                    event.target.checked,
+                                                )
+                                            }
+                                            className="rounded accent-brand-blue"
+                                        />{' '}
+                                        {label}
+                                    </label>
+                                ))}
+                            </fieldset>
+                        )}
+                    </div>
+
+                    <div className={`${card} space-y-4 p-5`}>
+                        <Field
+                            id="cover"
+                            label="Gambar Sampul"
+                            error={errors.cover}
+                            hint="JPG, PNG, atau WebP. Maksimal 5 MB."
+                        >
+                            {article?.cover_url && (
+                                <img
+                                    src={article.cover_url}
+                                    alt="Sampul saat ini"
+                                    width={400}
+                                    height={225}
+                                    className="mb-2 aspect-video w-full rounded-lg object-cover"
+                                />
+                            )}
+                            <input
+                                id="cover"
+                                type="file"
+                                accept="image/jpeg,image/png,image/webp"
+                                onChange={(event) =>
+                                    setData(
+                                        'cover',
+                                        event.target.files?.[0] ?? null,
+                                    )
+                                }
+                                className={textInput}
+                            />
+                        </Field>
+                        <Field
+                            id="cover_caption"
+                            label="Keterangan Foto"
+                            error={errors.cover_caption}
+                        >
+                            <input
+                                id="cover_caption"
+                                value={data.cover_caption}
+                                onChange={(event) =>
+                                    setData('cover_caption', event.target.value)
+                                }
+                                className={textInput}
+                            />
+                        </Field>
+                        <Field
+                            id="cover_credit"
+                            label="Kredit Foto"
+                            error={errors.cover_credit}
+                        >
+                            <input
+                                id="cover_credit"
+                                value={data.cover_credit}
+                                onChange={(event) =>
+                                    setData('cover_credit', event.target.value)
+                                }
+                                className={textInput}
+                            />
+                        </Field>
+                    </div>
+                </aside>
+            </form>
+        </>
+    );
+}
