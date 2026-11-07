@@ -1,14 +1,10 @@
 import { Link, usePage } from '@inertiajs/react';
 import Logo from '@/components/layout/logo';
-import { index as liveIndex } from '@/routes/live';
 import { show as showPage } from '@/routes/pages';
-import { index as videosIndex } from '@/routes/videos';
 
 const SOCIAL_ICONS = {
-    facebook: { icon: 'fa-facebook-f', label: 'Facebook' },
-    x: { icon: 'fa-x-twitter', label: 'X' },
-    youtube: { icon: 'fa-youtube', label: 'YouTube' },
     instagram: { icon: 'fa-instagram', label: 'Instagram' },
+    tiktok: { icon: 'fa-tiktok', label: 'TikTok' },
 } as const;
 
 type SocialKey = keyof typeof SOCIAL_ICONS;
@@ -71,22 +67,6 @@ export default function SiteFooter() {
                             Layanan Media
                         </h2>
                         <ul className="space-y-2">
-                            <li>
-                                <Link
-                                    href={liveIndex()}
-                                    className="transition hover:text-white"
-                                >
-                                    Beresin Live Streaming
-                                </Link>
-                            </li>
-                            <li>
-                                <Link
-                                    href={videosIndex()}
-                                    className="transition hover:text-white"
-                                >
-                                    Video & Liputan Khusus
-                                </Link>
-                            </li>
                             <li>
                                 <Link
                                     href={showPage('pedoman-media-siber')}

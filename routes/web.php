@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Dashboard\DashboardController;
 use App\Http\Controllers\Dashboard\NotificationController;
 use App\Http\Controllers\Dashboard\SubmissionController;
 use App\Http\Controllers\Public\ArticleController;
@@ -11,14 +12,11 @@ use App\Http\Controllers\Public\CommentController;
 use App\Http\Controllers\Public\ContactController;
 use App\Http\Controllers\Public\FeedController;
 use App\Http\Controllers\Public\HomeController;
-use App\Http\Controllers\Public\LiveChatController;
-use App\Http\Controllers\Public\LiveController;
 use App\Http\Controllers\Public\MidtransWebhookController;
 use App\Http\Controllers\Public\NewsletterController;
 use App\Http\Controllers\Public\PageController;
 use App\Http\Controllers\Public\SearchController;
 use App\Http\Controllers\Public\TagController;
-use App\Http\Controllers\Public\VideoController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', HomeController::class)->name('home');
@@ -43,13 +41,6 @@ Route::get('tag/{slug}', [TagController::class, 'show'])->name('tags.show');
 Route::get('penulis/{slug}', [AuthorController::class, 'show'])->name('authors.show');
 Route::get('halaman/{slug}', [PageController::class, 'show'])->name('pages.show');
 
-Route::get('live', [LiveController::class, 'index'])->name('live.index');
-Route::post('live/{stream}/hadir', [LiveController::class, 'heartbeat'])->middleware('throttle:10,1')->name('live.heartbeat');
-Route::post('live/{stream}/chat', [LiveChatController::class, 'store'])->middleware(['auth', 'throttle:live-chat'])->name('live.chat.store');
-
-Route::get('video', [VideoController::class, 'index'])->name('videos.index');
-Route::get('video/{slug}', [VideoController::class, 'show'])->name('videos.show');
-
 Route::get('tersimpan', [BookmarkController::class, 'index'])->name('bookmarks.index');
 Route::get('tersimpan/ringkasan', [BookmarkController::class, 'summary'])->middleware('throttle:60,1')->name('bookmarks.summary');
 
@@ -73,11 +64,7 @@ Route::post('kontak', [ContactController::class, 'store'])->middleware('throttle
 Route::post('midtrans/notifikasi', MidtransWebhookController::class)->middleware('throttle:120,1')->name('midtrans.notification');
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::get('dashboard', function () {
-        return request()->user()?->canAccessNewsroom()
-            ? redirect()->route('admin.dashboard')
-            : redirect()->route('submissions.index');
-    })->name('dashboard');
+    Route::get('dashboard', DashboardController::class)->name('dashboard');
 
     Route::get('kirim-berita', [SubmissionController::class, 'index'])->name('submissions.index');
     Route::get('kirim-berita/buat', [SubmissionController::class, 'create'])->name('submissions.create');

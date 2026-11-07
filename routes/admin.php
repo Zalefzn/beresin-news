@@ -5,7 +5,6 @@ use App\Http\Controllers\Admin\BreakingNewsController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\CommentController;
 use App\Http\Controllers\Admin\DashboardController;
-use App\Http\Controllers\Admin\LiveController;
 use App\Http\Controllers\Admin\NewsletterController;
 use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\PageController;
@@ -13,7 +12,6 @@ use App\Http\Controllers\Admin\ReviewController;
 use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Admin\TagController;
 use App\Http\Controllers\Admin\UserController;
-use App\Http\Controllers\Admin\VideoController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth', 'verified', 'newsroom'])->prefix('admin')->name('admin.')->group(function () {
@@ -54,19 +52,6 @@ Route::middleware(['auth', 'verified', 'newsroom'])->prefix('admin')->name('admi
     Route::post('komentar/{comment}/balas', [CommentController::class, 'reply'])->name('comments.reply');
     Route::put('komentar/{comment}/status', [CommentController::class, 'updateStatus'])->name('comments.status');
     Route::delete('komentar/{comment}', [CommentController::class, 'destroy'])->name('comments.destroy');
-
-    Route::get('video', [VideoController::class, 'index'])->name('videos.index');
-    Route::post('video', [VideoController::class, 'store'])->name('videos.store');
-    Route::put('video/{video}', [VideoController::class, 'update'])->name('videos.update');
-    Route::delete('video/{video}', [VideoController::class, 'destroy'])->name('videos.destroy');
-
-    Route::get('live', [LiveController::class, 'index'])->name('live.index');
-    Route::put('live', [LiveController::class, 'updateStream'])->name('live.stream');
-    Route::post('live/program', [LiveController::class, 'storeProgram'])->name('live.programs.store');
-    Route::put('live/program/{program}', [LiveController::class, 'updateProgram'])->name('live.programs.update');
-    Route::delete('live/program/{program}', [LiveController::class, 'destroyProgram'])->name('live.programs.destroy');
-    Route::delete('live/chat/{message}', [LiveController::class, 'hideMessage'])->name('live.chat.hide');
-    Route::post('live/blokir/{user}', [LiveController::class, 'toggleBlock'])->name('live.chat.block');
 
     Route::get('newsletter', [NewsletterController::class, 'index'])->name('newsletter.index');
     Route::get('newsletter/ekspor', [NewsletterController::class, 'export'])->name('newsletter.export');

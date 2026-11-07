@@ -109,52 +109,6 @@ export type Comment = {
     replies?: Comment[];
 };
 
-export type Video = {
-    id: number;
-    title: string;
-    slug: string;
-    url: string;
-    source_url: string;
-    thumbnail: string | null;
-    duration: string | null;
-    description: string | null;
-    views_count: number;
-    published_at: string | null;
-    published_label: string | null;
-    category: { name: string; slug: string } | null;
-};
-
-export type TvProgram = {
-    id: number;
-    title: string;
-    description: string | null;
-    hosts: string | null;
-    day_of_week: number | null;
-    starts_at: string;
-    ends_at: string;
-    is_now: boolean;
-};
-
-export type LiveChatMessage = {
-    id: number;
-    user: string;
-    user_id: number;
-    body: string;
-    time: string | null;
-};
-
-export type LiveBroadcast = {
-    id: number;
-    title: string;
-    stream_url: string | null;
-    viewer_count: number;
-    quality: string | null;
-    studio: string | null;
-    current_program: TvProgram | null;
-    schedule: TvProgram[];
-    messages: LiveChatMessage[];
-};
-
 export type BreakingItem = {
     id: number;
     title: string;
@@ -165,7 +119,7 @@ export type SiteSettings = {
     name: string;
     weatherCity: string;
     weatherTemp: string;
-    social: Partial<Record<'facebook' | 'x' | 'youtube' | 'instagram', string>>;
+    social: Partial<Record<'instagram' | 'tiktok', string>>;
     contact: { address?: string; email?: string; phone?: string };
     footerText: string;
     analyticsCode: string;

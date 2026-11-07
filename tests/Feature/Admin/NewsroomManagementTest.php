@@ -4,18 +4,15 @@ declare(strict_types=1);
 
 use App\Enums\CommentStatus;
 use App\Enums\UserRole;
-use App\Events\LiveChatMessageHidden;
 use App\Jobs\SendNewsletterIssue;
 use App\Models\Article;
 use App\Models\BreakingNews;
 use App\Models\Category;
 use App\Models\Comment;
-use App\Models\LiveChatMessage;
 use App\Models\NewsletterSubscriber;
 use App\Models\Page;
 use App\Models\Setting;
 use App\Models\User;
-use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Queue;
 use Inertia\Testing\AssertableInertia as Assert;
 
@@ -94,25 +91,6 @@ test('breaking news respects its active window', function () {
     );
 });
 
-test('moderators can hide chat messages and block users', function () {
-    Event::fake([LiveChatMessageHidden::class]);
-    $message = LiveChatMessage::factory()->create();
-    $editor = User::factory()->editor()->create();
-
-    $this->actingAs($editor)->delete(route('admin.live.chat.hide', $message));
-    expect($message->fresh()->is_hidden)->toBeTrue();
-    Event::assertDispatched(LiveChatMessageHidden::class);
-
-    $this->actingAs($editor)->post(route('admin.live.chat.block', $message->user_id));
-    expect(User::query()->findOrFail($message->user_id)->chat_blocked_at)->not->toBeNull();
-});
-
-test('program times are validated', function () {
-    $this->actingAs(User::factory()->editor()->create())
-        ->post(route('admin.live.programs.store'), ['title' => 'Program', 'starts_at' => '13:00', 'ends_at' => '12:00'])
-        ->assertSessionHasErrors('ends_at');
-});
-
 test('the newsletter is queued and exported as csv', function () {
     Queue::fake();
     $admin = User::factory()->admin()->create();
@@ -160,7 +138,7 @@ test('settings are saved and reach the public site', function () {
         'site_name' => 'BeresinNews',
         'weather_city' => 'Bandung',
         'weather_temp' => '24°C',
-        'social' => ['x' => 'https://x.com/beresin'],
+        'social' => ['tiktok' => 'https://www.tiktok.com/@beresin'],
         'contact' => ['email' => 'redaksi@example.com'],
     ])->assertSessionHasNoErrors();
 

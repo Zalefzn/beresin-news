@@ -1,6 +1,5 @@
-import { InfiniteScroll, Link, router, usePage } from '@inertiajs/react';
+import { InfiniteScroll, router, usePage } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
-import LiveSection from '@/components/live/live-section';
 import CategoryPills from '@/components/news/category-pills';
 import EmptyState from '@/components/news/empty-state';
 import HeroFeatured from '@/components/news/hero-featured';
@@ -10,12 +9,10 @@ import PopularList from '@/components/news/popular-list';
 import SectionHeader from '@/components/news/section-header';
 import SeoHead from '@/components/news/seo-head';
 import NewsletterCard from '@/components/newsletter/newsletter-card';
-import VideoCard from '@/components/video/video-card';
 import { formatRelative } from '@/lib/format';
 import { secondaryButton } from '@/lib/ui';
 import { home } from '@/routes';
-import { index as videosIndex } from '@/routes/videos';
-import type { ArticleCard, LiveBroadcast, Paginated, Video } from '@/types';
+import type { ArticleCard, Paginated } from '@/types';
 
 type HomeProps = {
     headline: ArticleCard | null;
@@ -23,9 +20,8 @@ type HomeProps = {
     updatedLabel: string | null;
     articles: Paginated<ArticleCard>;
     popular?: ArticleCard[];
-    videos: Video[];
-    liveStream: LiveBroadcast | null;
     filters: { kategori: string; urut: 'terbaru' | 'terpopuler' };
+    jsonLd: string;
 };
 
 function UpdatedLabel({ value }: { value: string }) {
@@ -48,9 +44,8 @@ export default function Home({
     updatedLabel,
     articles,
     popular,
-    videos,
-    liveStream,
     filters,
+    jsonLd,
 }: HomeProps) {
     const { navCategories } = usePage().props;
     const activeCategory = navCategories.find(
@@ -81,9 +76,18 @@ export default function Home({
     return (
         <>
             <SeoHead
-                title={activeCategory?.name ?? 'Berita. Teknologi. Masa Depan.'}
+                title={
+                    activeCategory?.name ??
+                    'Berita Terkini Teknologi, Edukasi, Ekonomi & Politik'
+                }
                 canonical={activeCategory?.url}
             />
+            {!isFiltered && (
+                <script
+                    type="application/ld+json"
+                    dangerouslySetInnerHTML={{ __html: jsonLd }}
+                />
+            )}
             {isFiltered ? (
                 <SectionHeader
                     title={`Berita ${activeCategory?.name ?? ''}`.trim()}
@@ -118,8 +122,6 @@ export default function Home({
                     )}
                 </section>
             )}
-
-            {!isFiltered && liveStream && <LiveSection stream={liveStream} />}
 
             <section id="news-feed" className="scroll-mt-20">
                 <div className="mb-6 flex flex-col justify-between gap-4 border-b border-slate-200 pb-3 md:flex-row md:items-center dark:border-slate-800">
@@ -210,32 +212,6 @@ export default function Home({
                     </aside>
                 </div>
             </section>
-
-            {!isFiltered && videos.length > 0 && (
-                <section id="video" className="scroll-mt-20 pt-4">
-                    <SectionHeader
-                        title="Video Highlights & Liputan Khusus"
-                        icon="fa-solid fa-circle-play"
-                        right={
-                            <Link
-                                href={videosIndex()}
-                                className="text-xs font-bold whitespace-nowrap text-brand-blue hover:underline dark:text-sky-400"
-                            >
-                                Lihat Semua Video{' '}
-                                <i
-                                    className="fa-solid fa-arrow-right"
-                                    aria-hidden="true"
-                                />
-                            </Link>
-                        }
-                    />
-                    <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                        {videos.map((video) => (
-                            <VideoCard key={video.id} video={video} />
-                        ))}
-                    </div>
-                </section>
-            )}
         </>
     );
 }

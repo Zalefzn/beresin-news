@@ -4,6 +4,7 @@ use App\Http\Middleware\EnsureAccountIsActive;
 use App\Http\Middleware\EnsureNewsroomAccess;
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
+use App\Http\Middleware\RedirectToCanonicalHost;
 use App\Http\Resources\ArticleCardResource;
 use App\Models\Article;
 use Illuminate\Foundation\Application;
@@ -22,10 +23,15 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // In production the app is only reachable through the Traefik reverse proxy, which terminates HTTPS.
+        $middleware->trustProxies(at: env('TRUSTED_PROXIES'));
+
         $middleware->encryptCookies(except: ['appearance', 'sidebar_state']);
 
         // Midtrans cannot send a CSRF token; the webhook verifies its signature instead.
         $middleware->preventRequestForgery(except: ['midtrans/notifikasi']);
+
+        $middleware->web(prepend: [RedirectToCanonicalHost::class]);
 
         $middleware->web(append: [
             HandleAppearance::class,

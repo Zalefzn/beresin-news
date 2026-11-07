@@ -41,6 +41,11 @@
             <title>{{ config('app.name', 'BeresinNews') }}</title>
         </x-inertia::head>
 
+        @php($googleVerification = app(\App\Actions\GetSharedSiteData::class)->setting('google_site_verification'))
+        @if ($googleVerification)
+            <meta name="google-site-verification" content="{{ $googleVerification }}">
+        @endif
+
         @php($analyticsCode = app(\App\Actions\GetSharedSiteData::class)->setting('analytics_code'))
         @if ($analyticsCode)
             <script async src="https://www.googletagmanager.com/gtag/js?id={{ $analyticsCode }}"></script>

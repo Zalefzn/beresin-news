@@ -4,17 +4,14 @@ declare(strict_types=1);
 
 use App\Models\Article;
 use App\Models\Category;
-use App\Models\LiveStream;
 use App\Models\Page;
 use App\Models\Tag;
 use App\Models\User;
-use App\Models\Video;
 use Inertia\Testing\AssertableInertia as Assert;
 
 test('home page renders the news portal props', function () {
     Article::factory()->headline()->create(['title' => 'Berita Utama Hari Ini']);
     Article::factory()->count(2)->create(['is_trending' => true]);
-    Video::factory()->create();
 
     $this->get(route('home'))
         ->assertOk()
@@ -23,8 +20,6 @@ test('home page renders the news portal props', function () {
             ->where('headline.title', 'Berita Utama Hari Ini')
             ->has('trending', 2)
             ->has('articles.data', 3)
-            ->has('videos', 1)
-            ->where('liveStream', null)
             ->missing('popular')
             ->has('navCategories')
             ->has('site')
@@ -60,8 +55,6 @@ test('public listing pages render', function (string $routeName, array $paramete
 })->with([
     'index' => ['articles.index', [], 'articles/index'],
     'popular' => ['articles.popular', [], 'articles/popular'],
-    'live' => ['live.index', [], 'live/index'],
-    'videos' => ['videos.index', [], 'videos/index'],
     'contact' => ['contact.show', [], 'contact/index'],
     'search' => ['search.index', [], 'search/index'],
     'bookmarks' => ['bookmarks.index', [], 'bookmarks/index'],
@@ -104,27 +97,10 @@ test('author profile never exposes the email address', function () {
     expect($response->getContent())->not->toContain('rahasia@example.com');
 });
 
-test('static page and video detail render', function () {
+test('static page renders', function () {
     $staticPage = Page::factory()->create(['slug' => 'tentang-kami']);
-    $video = Video::factory()->create();
 
     $this->get(route('pages.show', $staticPage->slug))->assertOk()->assertInertia(fn (Assert $page) => $page->component('pages/show'));
-    $this->get(route('videos.show', $video->slug))->assertOk()->assertInertia(fn (Assert $page) => $page->component('videos/show'));
-    expect($video->fresh()->views_count)->toBe($video->views_count + 1);
-});
-
-test('unpublished videos return 404', function () {
-    $video = Video::factory()->create(['published_at' => null]);
-
-    $this->get(route('videos.show', $video->slug))->assertNotFound();
-});
-
-test('live page shows an active broadcast or the offline state', function () {
-    $this->get(route('live.index'))->assertInertia(fn (Assert $page) => $page->where('liveStream', null));
-
-    LiveStream::factory()->create(['title' => 'Siaran Tes']);
-
-    $this->get(route('live.index'))->assertInertia(fn (Assert $page) => $page->where('liveStream.title', 'Siaran Tes'));
 });
 
 test('unknown pages render the Indonesian error page with the latest news', function () {
@@ -133,4 +109,15 @@ test('unknown pages render the Indonesian error page with the latest news', func
     $this->get('/halaman/tidak-ada')
         ->assertNotFound()
         ->assertInertia(fn (Assert $page) => $page->component('errors/error')->where('status', 404)->has('latest', 4));
+});
+
+test('cached shared links do not depend on the host that built the cache', function () {
+    Tag::factory()->create(['slug' => 'starlink', 'is_trending' => true]);
+
+    $this->get('http://127.0.0.1/')->assertOk();
+
+    $this->get(route('home'))
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('trendingTags.0.url', '/tag/starlink')
+        );
 });

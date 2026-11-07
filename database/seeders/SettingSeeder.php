@@ -16,10 +16,8 @@ class SettingSeeder extends Seeder
             'weather_city' => 'Jakarta',
             'weather_temp' => '29°C',
             'social' => [
-                'facebook' => 'https://facebook.com/beresinnews',
-                'x' => 'https://x.com/beresinnews',
-                'youtube' => 'https://youtube.com/@beresinnews',
-                'instagram' => 'https://instagram.com/beresinnews',
+                'instagram' => 'https://www.instagram.com/beresinnews',
+                'tiktok' => 'https://www.tiktok.com/@beresinnews',
             ],
             'contact' => [
                 'address' => "Gedung Menara Media Digital Lt. 12\nJl. Jend. Sudirman Kav. 52, Jakarta Selatan",
@@ -28,8 +26,6 @@ class SettingSeeder extends Seeder
             ],
             'footer_text' => 'Portal berita independen menyajikan analisis mendalam, informasi teknologi terdepan, serta liputan multimedia real-time terpercaya di Indonesia.',
             'analytics_code' => '',
-            'live_quality' => '1080p 60FPS',
-            'live_studio' => 'Beresin Studio Jakarta Central',
             'price_general' => 30000,
             'price_branding' => 50000,
         ];

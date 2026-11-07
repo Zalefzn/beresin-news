@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 use App\Models\User;
 
-$managerPages = ['admin.breaking.index', 'admin.comments.index', 'admin.videos.index', 'admin.live.index'];
+$managerPages = ['admin.breaking.index', 'admin.comments.index'];
 $adminPages = ['admin.categories.index', 'admin.tags.index', 'admin.newsletter.index', 'admin.pages.index', 'admin.users.index', 'admin.settings.edit'];
 $everyStaffPage = ['admin.dashboard', 'admin.articles.index', 'admin.articles.create'];
 

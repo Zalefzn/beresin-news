@@ -2,11 +2,9 @@ import { Link, router, usePage } from '@inertiajs/react';
 import type { FormEvent } from 'react';
 import { useEffect, useState } from 'react';
 import Logo from '@/components/layout/logo';
-import LiveDot from '@/components/live/live-dot';
 import { sendRequest } from '@/lib/http';
 import { cn } from '@/lib/utils';
 import { home } from '@/routes';
-import { index as liveIndex } from '@/routes/live';
 import {
     index as searchIndex,
     suggestions as searchSuggestions,
@@ -166,12 +164,6 @@ export default function MainNav() {
                     <Link href={home()} className={linkClass(isHomeActive)}>
                         Berita Utama
                     </Link>
-                    <Link
-                        href={liveIndex()}
-                        className="flex items-center gap-1.5 rounded-lg px-2.5 py-2 font-bold whitespace-nowrap text-rose-600 transition hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-950/40"
-                    >
-                        <LiveDot /> Live TV
-                    </Link>
                     {navCategories.map((category) => (
                         <Link
                             key={category.id}
@@ -224,13 +216,6 @@ export default function MainNav() {
                             className={mobileLinkClass(isHomeActive)}
                         >
                             Berita Utama
-                        </Link>
-                        <Link
-                            href={liveIndex()}
-                            onClick={closeMobile}
-                            className="flex items-center gap-2 rounded-lg bg-rose-50 px-3 py-2 text-rose-600 dark:bg-rose-950/50"
-                        >
-                            <LiveDot /> Live Streaming TV
                         </Link>
                         {navCategories.map((category) => (
                             <Link

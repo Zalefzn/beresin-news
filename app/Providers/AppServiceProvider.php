@@ -83,10 +83,6 @@ class AppServiceProvider extends ServiceProvider
             ->by((string) $request->ip())
             ->response($tooMany('Terlalu banyak permintaan. Silakan coba lagi sebentar.')));
 
-        RateLimiter::for('live-chat', fn (Request $request): Limit => Limit::perSecond(1, 3)
-            ->by((string) ($request->user()->id ?? $request->ip()))
-            ->response($tooMany('Tunggu 3 detik sebelum mengirim pesan berikutnya.')));
-
         RateLimiter::for('newsletter', fn (Request $request): Limit => Limit::perMinute(5)
             ->by((string) $request->ip())
             ->response($tooMany('Terlalu banyak percobaan. Silakan coba lagi sebentar.')));

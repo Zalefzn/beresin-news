@@ -12,7 +12,7 @@ type SeoHeadProps = {
 };
 
 const DEFAULT_DESCRIPTION =
-    'BeresinNews - portal berita digital: analisis mendalam, informasi teknologi terdepan, serta liputan multimedia real-time di Indonesia.';
+    'BeresinNews - portal berita digital Indonesia: berita terkini dan analisis mendalam seputar teknologi, edukasi & pendidikan, ekonomi, serta sosial & politik.';
 
 export default function SeoHead({
     title,

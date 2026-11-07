@@ -26,7 +26,6 @@ class DatabaseSeeder extends Seeder
         $this->call([
             SettingSeeder::class,
             NewsroomSeeder::class,
-            MediaContentSeeder::class,
             PageSeeder::class,
         ]);
     }

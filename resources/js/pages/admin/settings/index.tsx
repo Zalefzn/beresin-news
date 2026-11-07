@@ -10,16 +10,13 @@ type Settings = {
     weather_city: string;
     weather_temp: string;
     social: {
-        facebook?: string;
-        x?: string;
-        youtube?: string;
         instagram?: string;
+        tiktok?: string;
     };
     contact: { address?: string; email?: string; phone?: string };
     footer_text: string;
     analytics_code: string;
-    live_quality: string;
-    live_studio: string;
+    google_site_verification: string;
     price_general: number;
     price_branding: number;
 };
@@ -34,10 +31,8 @@ export default function AdminSettingsIndex({
         weather_city: settings.weather_city ?? '',
         weather_temp: settings.weather_temp ?? '',
         social: {
-            facebook: settings.social?.facebook ?? '',
-            x: settings.social?.x ?? '',
-            youtube: settings.social?.youtube ?? '',
             instagram: settings.social?.instagram ?? '',
+            tiktok: settings.social?.tiktok ?? '',
         },
         contact: {
             address: settings.contact?.address ?? '',
@@ -46,8 +41,7 @@ export default function AdminSettingsIndex({
         },
         footer_text: settings.footer_text ?? '',
         analytics_code: settings.analytics_code ?? '',
-        live_quality: settings.live_quality ?? '',
-        live_studio: settings.live_studio ?? '',
+        google_site_verification: settings.google_site_verification ?? '',
         price_general: settings.price_general,
         price_branding: settings.price_branding,
     });
@@ -118,33 +112,27 @@ export default function AdminSettingsIndex({
                     <h2 className="text-sm font-extrabold text-slate-900 md:col-span-2 dark:text-white">
                         Sosial Media
                     </h2>
-                    {(['facebook', 'x', 'youtube', 'instagram'] as const).map(
-                        (key) => (
-                            <Field
-                                key={key}
+                    {(['instagram', 'tiktok'] as const).map((key) => (
+                        <Field
+                            key={key}
+                            id={`social-${key}`}
+                            label={key === 'tiktok' ? 'TikTok' : 'Instagram'}
+                            error={errorFor(`social.${key}`)}
+                        >
+                            <input
                                 id={`social-${key}`}
-                                label={
-                                    key === 'x'
-                                        ? 'X'
-                                        : key[0].toUpperCase() + key.slice(1)
+                                type="url"
+                                value={data.social[key]}
+                                onChange={(event) =>
+                                    setData('social', {
+                                        ...data.social,
+                                        [key]: event.target.value,
+                                    })
                                 }
-                                error={errorFor(`social.${key}`)}
-                            >
-                                <input
-                                    id={`social-${key}`}
-                                    type="url"
-                                    value={data.social[key]}
-                                    onChange={(event) =>
-                                        setData('social', {
-                                            ...data.social,
-                                            [key]: event.target.value,
-                                        })
-                                    }
-                                    className={textInput}
-                                />
-                            </Field>
-                        ),
-                    )}
+                                className={textInput}
+                            />
+                        </Field>
+                    ))}
                 </div>
 
                 <div
@@ -246,29 +234,19 @@ export default function AdminSettingsIndex({
                         />
                     </Field>
                     <Field
-                        id="live_quality"
-                        label="Label Kualitas Siaran"
-                        error={errors.live_quality}
+                        id="google_site_verification"
+                        label="Kode Verifikasi Google Search Console"
+                        error={errors.google_site_verification}
+                        hint='Isi atribut content dari tag meta "google-site-verification".'
                     >
                         <input
-                            id="live_quality"
-                            value={data.live_quality}
+                            id="google_site_verification"
+                            value={data.google_site_verification}
                             onChange={(event) =>
-                                setData('live_quality', event.target.value)
-                            }
-                            className={textInput}
-                        />
-                    </Field>
-                    <Field
-                        id="live_studio"
-                        label="Nama Studio"
-                        error={errors.live_studio}
-                    >
-                        <input
-                            id="live_studio"
-                            value={data.live_studio}
-                            onChange={(event) =>
-                                setData('live_studio', event.target.value)
+                                setData(
+                                    'google_site_verification',
+                                    event.target.value,
+                                )
                             }
                             className={textInput}
                         />

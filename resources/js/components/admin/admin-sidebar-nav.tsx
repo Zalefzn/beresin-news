@@ -1,7 +1,6 @@
 import { Link, usePage } from '@inertiajs/react';
 import {
     ChevronRight,
-    Clapperboard,
     LayoutGrid,
     MessagesSquare,
     Newspaper,
@@ -30,7 +29,6 @@ import { index as articlesIndex } from '@/routes/admin/articles';
 import { index as breakingIndex } from '@/routes/admin/breaking';
 import { index as categoriesIndex } from '@/routes/admin/categories';
 import { index as commentsIndex } from '@/routes/admin/comments';
-import { index as liveIndex } from '@/routes/admin/live';
 import { index as newsletterIndex } from '@/routes/admin/newsletter';
 import { index as ordersIndex } from '@/routes/admin/orders';
 import { index as pagesIndex } from '@/routes/admin/pages';
@@ -38,7 +36,6 @@ import { index as reviewsIndex } from '@/routes/admin/reviews';
 import { edit as settingsEdit } from '@/routes/admin/settings';
 import { index as tagsIndex } from '@/routes/admin/tags';
 import { index as usersIndex } from '@/routes/admin/users';
-import { index as videosIndex } from '@/routes/admin/videos';
 import type { User } from '@/types';
 
 type Audience = (user: User) => boolean;
@@ -101,14 +98,6 @@ const NAV_GROUPS: NavGroup[] = [
                 href: commentsIndex.url(),
                 isVisible: managers,
             },
-        ],
-    },
-    {
-        title: 'Multimedia',
-        icon: Clapperboard,
-        links: [
-            { title: 'Video', href: videosIndex.url(), isVisible: managers },
-            { title: 'Live TV', href: liveIndex.url(), isVisible: managers },
         ],
     },
     {

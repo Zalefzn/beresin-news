@@ -33,8 +33,7 @@ class GetSharedSiteData
         'contact' => ['address' => '', 'email' => '', 'phone' => ''],
         'footer_text' => '',
         'analytics_code' => '',
-        'live_quality' => '1080p 60FPS',
-        'live_studio' => 'Beresin Studio Jakarta Central',
+        'google_site_verification' => '',
         'price_general' => 30000,
         'price_branding' => 50000,
     ];
@@ -55,7 +54,7 @@ class GetSharedSiteData
                 'name' => $category->name,
                 'slug' => $category->slug,
                 'color' => $category->color,
-                'url' => route('categories.show', $category->slug),
+                'url' => route('categories.show', $category->slug, absolute: false),
             ])->all());
     }
 
@@ -71,7 +70,7 @@ class GetSharedSiteData
                 'id' => $tag->id,
                 'name' => $tag->name,
                 'slug' => $tag->slug,
-                'url' => route('tags.show', $tag->slug),
+                'url' => route('tags.show', $tag->slug, absolute: false),
             ])->all());
     }
 
@@ -97,14 +96,14 @@ class GetSharedSiteData
                 ->map(fn (Article $article): array => [
                     'id' => -$article->id,
                     'title' => $article->title,
-                    'url' => $article->url(),
+                    'url' => $article->url(absolute: false),
                 ]);
 
             return $tickerItems
                 ->map(fn (BreakingNews $item): array => [
                     'id' => $item->id,
                     'title' => $item->text,
-                    'url' => $item->article?->isPubliclyVisible() ? $item->article->url() : null,
+                    'url' => $item->article?->isPubliclyVisible() ? $item->article->url(absolute: false) : null,
                 ])
                 ->concat($flaggedArticles)
                 ->values()

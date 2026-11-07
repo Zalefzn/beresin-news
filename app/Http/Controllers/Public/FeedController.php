@@ -10,7 +10,6 @@ use App\Models\Article;
 use App\Models\Category;
 use App\Models\Page;
 use App\Models\Tag;
-use App\Models\Video;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Response;
 use Spatie\Sitemap\Sitemap;
@@ -53,14 +52,11 @@ class FeedController extends Controller
             ->add(Url::create(route('home'))->setPriority(1.0))
             ->add(Url::create(route('articles.index')))
             ->add(Url::create(route('articles.popular')))
-            ->add(Url::create(route('live.index')))
-            ->add(Url::create(route('videos.index')))
             ->add(Url::create(route('contact.show')));
 
         Category::query()->active()->get()->each(fn (Category $category) => $sitemap->add(Url::create(route('categories.show', $category->slug))));
         Tag::query()->get()->each(fn (Tag $tag) => $sitemap->add(Url::create(route('tags.show', $tag->slug))));
         Page::query()->get()->each(fn (Page $page) => $sitemap->add(Url::create(route('pages.show', $page->slug))));
-        Video::query()->published()->get()->each(fn (Video $video) => $sitemap->add(Url::create(route('videos.show', $video->slug))));
 
         Article::query()->published()->with('category')->latest('published_at')->limit(5000)->get()
             ->each(function (Article $article) use ($sitemap): void {

@@ -22,18 +22,15 @@ class SaveSettingsRequest extends FormRequest
             'weather_city' => ['required', 'string', 'max:60'],
             'weather_temp' => ['required', 'string', 'max:10'],
             'social' => ['array'],
-            'social.facebook' => ['nullable', 'url:https,http'],
-            'social.x' => ['nullable', 'url:https,http'],
-            'social.youtube' => ['nullable', 'url:https,http'],
             'social.instagram' => ['nullable', 'url:https,http'],
+            'social.tiktok' => ['nullable', 'url:https,http'],
             'contact' => ['array'],
             'contact.address' => ['nullable', 'string', 'max:500'],
             'contact.email' => ['nullable', 'email'],
             'contact.phone' => ['nullable', 'string', 'max:30'],
             'footer_text' => ['nullable', 'string', 'max:500'],
             'analytics_code' => ['nullable', 'string', 'max:30', 'regex:/^[A-Za-z0-9-]+$/'],
-            'live_quality' => ['nullable', 'string', 'max:30'],
-            'live_studio' => ['nullable', 'string', 'max:100'],
+            'google_site_verification' => ['nullable', 'string', 'max:100', 'regex:/^[A-Za-z0-9_-]+$/'],
             'price_general' => ['sometimes', 'required', 'integer', 'min:1000', 'max:100000000'],
             'price_branding' => ['sometimes', 'required', 'integer', 'min:1000', 'max:100000000'],
         ];
@@ -44,6 +41,7 @@ class SaveSettingsRequest extends FormRequest
     {
         return [
             'analytics_code.regex' => 'Kode analytics hanya berupa ID pengukuran, misalnya G-ABC123.',
+            'google_site_verification.regex' => 'Kode verifikasi Google hanya berisi isi atribut content, misalnya AbC123xyz.',
         ];
     }
 
@@ -58,6 +56,7 @@ class SaveSettingsRequest extends FormRequest
             'contact.email' => 'email redaksi',
             'contact.phone' => 'telepon',
             'footer_text' => 'teks footer',
+            'google_site_verification' => 'kode verifikasi Google',
             'price_general' => 'harga berita umum',
             'price_branding' => 'harga berita khusus',
         ];
