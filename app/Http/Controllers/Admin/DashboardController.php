@@ -8,7 +8,6 @@ use App\Enums\ArticleStatus;
 use App\Enums\CommentStatus;
 use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
-use App\Http\Resources\ArticleCardResource;
 use App\Models\Article;
 use App\Models\ArticleView;
 use App\Models\BreakingNews;
@@ -33,7 +32,7 @@ class DashboardController extends Controller
 
     private const int NEW_USER_DAYS = 7;
 
-    private const int POPULAR_LIMIT = 5;
+    private const int POPULAR_LIMIT = 10;
 
     private const int ACTIVITY_LIMIT = 6;
 
@@ -54,7 +53,7 @@ class DashboardController extends Controller
             // Emails are private, so only admins (who manage users) get the list.
             'latestUsers' => $viewer->isAdmin() ? $this->latestUsers() : null,
             'viewsChart' => Inertia::defer(fn (): array => $this->viewsChart($authorId)->all()),
-            'popular' => ArticleCardResource::collection($this->popular($authorId)),
+            'popular' => $this->popular($authorId),
             'activity' => Article::query()
                 ->with('author')
                 ->when($authorId, fn (Builder $query) => $query->where('author_id', $authorId))
@@ -81,21 +80,21 @@ class DashboardController extends Controller
                 'description' => 'Ringkasan seluruh aktivitas BeresinNews.',
                 'popularTitle' => '5 Artikel Terpopuler',
                 'activityTitle' => 'Aktivitas Terbaru',
-                'chartTitle' => 'Tayangan 30 Hari Terakhir',
+                'chartTitle' => 'Kunjungan 30 Hari Terakhir',
             ],
             UserRole::Editor => [
                 'title' => 'Dashboard Redaktur',
                 'description' => 'Antrean kerja redaksi hari ini.',
                 'popularTitle' => '5 Artikel Terpopuler',
                 'activityTitle' => 'Aktivitas Redaksi',
-                'chartTitle' => 'Tayangan 30 Hari Terakhir',
+                'chartTitle' => 'Kunjungan 30 Hari Terakhir',
             ],
             default => [
                 'title' => 'Dashboard Jurnalis',
                 'description' => "Halo {$viewer->name}, ini ringkasan artikel Anda.",
                 'popularTitle' => 'Artikel Saya Terpopuler',
                 'activityTitle' => 'Artikel Saya Terakhir Diubah',
-                'chartTitle' => 'Tayangan Artikel Saya 30 Hari Terakhir',
+                'chartTitle' => 'Kunjungan Artikel Saya 30 Hari Terakhir',
             ],
         };
     }
@@ -105,7 +104,7 @@ class DashboardController extends Controller
     {
         return [
             $this->tile('Artikel terbit hari ini', $this->publishedToday(), 'fa-newspaper', 'Lihat artikel', route('admin.articles.index', ['status' => 'published'])),
-            $this->tile('Total views 24 jam', $this->views24h(), 'fa-eye', 'Lihat terpopuler', popup: 'popular'),
+            $this->tile('Kunjungan 24 jam', $this->views24h(), 'fa-users-viewfinder', 'Lihat per artikel', popup: 'popular'),
             $this->tile('Naskah menunggu tinjauan', Article::query()->where('status', ArticleStatus::Review)->count(), 'fa-clipboard-check', 'Tinjau naskah', route('admin.reviews.index')),
             $this->tile('Komentar menunggu', $this->pendingComments(), 'fa-comments', 'Moderasi', route('admin.comments.index', ['status' => 'pending'])),
             $this->tile('Pelanggan newsletter', NewsletterSubscriber::query()->active()->count(), 'fa-envelope', 'Lihat pelanggan', route('admin.newsletter.index', ['status' => 'aktif'])),
@@ -118,7 +117,7 @@ class DashboardController extends Controller
     {
         return [
             $this->tile('Artikel terbit hari ini', $this->publishedToday(), 'fa-newspaper', 'Lihat artikel', route('admin.articles.index', ['status' => 'published'])),
-            $this->tile('Total views 24 jam', $this->views24h(), 'fa-eye', 'Lihat terpopuler', popup: 'popular'),
+            $this->tile('Kunjungan 24 jam', $this->views24h(), 'fa-users-viewfinder', 'Lihat per artikel', popup: 'popular'),
             $this->tile('Artikel menunggu review', Article::query()->where('status', ArticleStatus::Review)->count(), 'fa-hourglass-half', 'Lihat antrean', route('admin.articles.index', ['status' => 'review'])),
             $this->tile('Draf redaksi', Article::query()->where('status', ArticleStatus::Draft)->whereNull('package')->count(), 'fa-pencil', 'Lihat draf', route('admin.articles.index', ['status' => 'draft'])),
             $this->tile('Komentar menunggu', $this->pendingComments(), 'fa-comments', 'Moderasi', route('admin.comments.index', ['status' => 'pending'])),
@@ -134,8 +133,8 @@ class DashboardController extends Controller
 
         return [
             $this->tile('Artikel saya terbit', $own()->published()->count(), 'fa-newspaper', 'Lihat artikel', route('admin.articles.index', ['status' => 'published'])),
-            $this->tile('Views artikel saya 24 jam', $this->views24h($writer->id), 'fa-eye', 'Lihat terpopuler', popup: 'popular'),
-            $this->tile('Total views artikel saya', (int) $own()->sum('views_count'), 'fa-chart-line', 'Lihat semua', route('admin.articles.index')),
+            $this->tile('Kunjungan artikel saya 24 jam', $this->views24h($writer->id), 'fa-users-viewfinder', 'Lihat per artikel', popup: 'popular'),
+            $this->tile('Total kunjungan artikel saya', (int) $own()->sum('views_count'), 'fa-chart-line', 'Lihat semua', route('admin.articles.index')),
             $this->tile('Draf saya', $countByStatus(ArticleStatus::Draft), 'fa-pencil', 'Lanjutkan menulis', route('admin.articles.index', ['status' => 'draft'])),
             $this->tile('Menunggu review', $countByStatus(ArticleStatus::Review), 'fa-hourglass-half', 'Lihat status', route('admin.articles.index', ['status' => 'review'])),
             $this->tile('Perlu revisi', $countByStatus(ArticleStatus::Rejected), 'fa-rotate-left', 'Perbaiki', route('admin.articles.index', ['status' => 'rejected'])),
@@ -187,16 +186,29 @@ class DashboardController extends Controller
         );
     }
 
-    /** @return \Illuminate\Database\Eloquent\Collection<int, Article> */
-    private function popular(?int $authorId): \Illuminate\Database\Eloquent\Collection
+    /**
+     * Ranked by visits in the last 24 hours, with the all-time count alongside.
+     *
+     * @return Collection<int, array{id: int, title: string, url: string, category: string, views_24h: int, views_total: int}>
+     */
+    private function popular(?int $authorId): Collection
     {
         return Article::query()
             ->published()
-            ->forCard()
+            ->with('category')
             ->when($authorId, fn (Builder $query) => $query->where('author_id', $authorId))
             ->popularSince(now()->subDay())
             ->limit(self::POPULAR_LIMIT)
-            ->get();
+            ->get()
+            ->map(fn (Article $article): array => [
+                'id' => $article->id,
+                'title' => $article->title,
+                'url' => $article->url(absolute: false),
+                'category' => $article->category->name,
+                'views_24h' => (int) $article->getAttribute('recent_views_count'),
+                'views_total' => $article->views_count,
+            ])
+            ->toBase();
     }
 
     /**

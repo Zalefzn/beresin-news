@@ -14,7 +14,14 @@ import { formatNumber } from '@/lib/format';
 import { card, secondaryButton } from '@/lib/ui';
 import { index as articlesIndex } from '@/routes/admin/articles';
 import { index as usersIndex } from '@/routes/admin/users';
-import type { ArticleCard } from '@/types';
+type PopularArticle = {
+    id: number;
+    title: string;
+    url: string;
+    category: string;
+    views_24h: number;
+    views_total: number;
+};
 
 type LatestUser = {
     id: number;
@@ -49,7 +56,7 @@ type DashboardProps = {
     tiles: Tile[];
     latestUsers: LatestUser[] | null;
     viewsChart?: ChartPoint[];
-    popular: ArticleCard[];
+    popular: PopularArticle[];
     activity: {
         id: number;
         title: string;
@@ -101,50 +108,68 @@ function PopularDialog({
     onClose,
 }: {
     title: string;
-    articles: ArticleCard[];
+    articles: PopularArticle[];
     total: number;
     onClose: () => void;
 }) {
     return (
         <Dialog open onOpenChange={(open) => !open && onClose()}>
-            <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
-                <DialogTitle>{title}</DialogTitle>
+            <DialogContent className="max-h-[85vh] overflow-x-hidden overflow-y-auto sm:max-w-3xl [&>*]:min-w-0">
+                <DialogTitle className="flex items-center gap-2">
+                    <i
+                        className="fa-solid fa-users-viewfinder text-brand-blue dark:text-sky-400"
+                        aria-hidden="true"
+                    />
+                    {title}
+                </DialogTitle>
                 <DialogDescription>
-                    {formatNumber(total)} kunjungan. Artikel paling banyak
-                    dibaca:
+                    Total {formatNumber(total)} kunjungan dalam 24 jam terakhir.
+                    Rincian views per artikel:
                 </DialogDescription>
                 {articles.length === 0 ? (
                     <p className="py-6 text-center text-xs text-slate-500 dark:text-slate-400">
                         Belum ada kunjungan dalam 24 jam terakhir.
                     </p>
                 ) : (
-                    <ol className="divide-y divide-slate-200 dark:divide-slate-800">
-                        {articles.map((article, position) => (
-                            <li
-                                key={article.id}
-                                className="flex items-center gap-3 py-3"
-                            >
-                                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-sm font-black text-brand-blue dark:bg-slate-800 dark:text-sky-400">
-                                    {position + 1}
-                                </span>
-                                <a
-                                    href={article.url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="min-w-0 flex-1 truncate text-sm font-bold text-slate-900 hover:text-brand-blue dark:text-white"
+                    <div className="rounded-xl border border-slate-200 dark:border-slate-800">
+                        <div className="grid grid-cols-[2rem_1fr_5rem_5rem] gap-3 border-b border-slate-200 bg-slate-50 px-3 py-2 text-[10px] font-bold tracking-wider text-slate-500 uppercase sm:grid-cols-[2rem_1fr_7rem_7rem] dark:border-slate-800 dark:bg-slate-800/60 dark:text-slate-400">
+                            <span>#</span>
+                            <span>Artikel</span>
+                            <span className="text-right">24 Jam</span>
+                            <span className="text-right">Total Views</span>
+                        </div>
+                        <ol className="divide-y divide-slate-100 dark:divide-slate-800">
+                            {articles.map((article, position) => (
+                                <li
+                                    key={article.id}
+                                    className="grid grid-cols-[2rem_1fr_5rem_5rem] items-center gap-3 px-3 py-3 sm:grid-cols-[2rem_1fr_7rem_7rem]"
                                 >
-                                    {article.title}
-                                </a>
-                                <span className="text-xs whitespace-nowrap text-slate-500 dark:text-slate-400">
-                                    <i
-                                        className="fa-solid fa-eye mr-1"
-                                        aria-hidden="true"
-                                    />
-                                    {formatNumber(article.views_count)}
-                                </span>
-                            </li>
-                        ))}
-                    </ol>
+                                    <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-slate-100 text-xs font-black text-brand-blue dark:bg-slate-800 dark:text-sky-400">
+                                        {position + 1}
+                                    </span>
+                                    <div className="min-w-0">
+                                        <a
+                                            href={article.url}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="line-clamp-2 text-sm leading-snug font-bold text-slate-900 hover:text-brand-blue dark:text-white"
+                                        >
+                                            {article.title}
+                                        </a>
+                                        <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                                            {article.category}
+                                        </p>
+                                    </div>
+                                    <span className="text-right text-sm font-black text-brand-blue tabular-nums dark:text-sky-400">
+                                        {formatNumber(article.views_24h)}
+                                    </span>
+                                    <span className="text-right text-xs text-slate-500 tabular-nums dark:text-slate-400">
+                                        {formatNumber(article.views_total)}
+                                    </span>
+                                </li>
+                            ))}
+                        </ol>
+                    </div>
                 )}
                 <Link
                     href={articlesIndex.url()}
@@ -166,7 +191,7 @@ function LatestUsersDialog({
 }) {
     return (
         <Dialog open onOpenChange={(open) => !open && onClose()}>
-            <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
+            <DialogContent className="max-h-[85vh] overflow-x-hidden overflow-y-auto sm:max-w-2xl [&>*]:min-w-0">
                 <DialogTitle>Pengguna Terbaru</DialogTitle>
                 <DialogDescription>
                     Diurutkan dari yang paling baru mendaftar.
@@ -311,7 +336,7 @@ export default function AdminDashboard({
                         </p>
                     ) : (
                         <ol className="space-y-3">
-                            {popular.map((article, index) => (
+                            {popular.slice(0, 5).map((article, index) => (
                                 <li
                                     key={article.id}
                                     className="flex items-center gap-3 text-xs"
@@ -325,8 +350,14 @@ export default function AdminDashboard({
                                     >
                                         {article.title}
                                     </Link>
-                                    <span className="text-slate-500 dark:text-slate-400">
-                                        {formatNumber(article.views_count)}
+                                    <span
+                                        className="whitespace-nowrap text-slate-500 dark:text-slate-400"
+                                        title="Kunjungan 24 jam / total views"
+                                    >
+                                        <strong className="text-brand-blue dark:text-sky-400">
+                                            {formatNumber(article.views_24h)}
+                                        </strong>{' '}
+                                        / {formatNumber(article.views_total)}
                                     </span>
                                 </li>
                             ))}

@@ -57,12 +57,14 @@ test('writers only see numbers about their own articles', function () {
                 ->where('latestUsers', null)
                 ->has('popular', 1)
                 ->where('popular.0.id', $mine->id)
+                ->where('popular.0.views_24h', 1)
+                ->where('popular.0.views_total', 40)
                 ->has('activity', 3);
 
             expect(tileValues($page))->toMatchArray([
                 'Artikel saya terbit' => 1,
-                'Views artikel saya 24 jam' => 1,
-                'Total views artikel saya' => 40,
+                'Kunjungan artikel saya 24 jam' => 1,
+                'Total kunjungan artikel saya' => 40,
                 'Draf saya' => 1,
                 'Perlu revisi' => 1,
             ]);
