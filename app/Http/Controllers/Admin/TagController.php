@@ -22,6 +22,7 @@ class TagController extends Controller
         return Inertia::render('admin/tags/index', [
             'tags' => Tag::query()->withCount('articles')
                 ->when($request->filled('q'), fn ($query) => $query->whereLike('name', '%'.$request->string('q')->toString().'%'))
+                ->when($request->filled('trending'), fn ($query) => $query->where('is_trending', $request->string('trending')->toString() === 'ya'))
                 ->orderByDesc('is_trending')
                 ->orderBy('name')
                 ->paginate(30)
@@ -33,7 +34,7 @@ class TagController extends Controller
                     'is_trending' => $tag->is_trending,
                     'articles_count' => $tag->getAttribute('articles_count'),
                 ]),
-            'filters' => $request->only('q'),
+            'filters' => $request->only(['q', 'trending']),
         ]);
     }
 

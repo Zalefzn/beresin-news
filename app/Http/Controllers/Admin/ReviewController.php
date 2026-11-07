@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Admin;
 
 use App\Actions\ReviewArticle;
+use App\Enums\ArticlePackage;
 use App\Enums\ArticleStatus;
 use App\Enums\OrderStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Article;
+use App\Models\Category;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -20,16 +22,23 @@ class ReviewController extends Controller
 {
     private const int PER_PAGE = 15;
 
-    public function index(): Response
+    public function index(Request $request): Response
     {
         Gate::authorize('publish', Article::class);
+
+        $package = $request->string('paket')->toString();
 
         return Inertia::render('admin/reviews/index', [
             'articles' => Article::query()
                 ->where('status', ArticleStatus::Review)
                 ->with(['category', 'author', 'orders'])
+                ->when($request->filled('q'), fn ($query) => $query->whereLike('title', '%'.$request->string('q')->toString().'%'))
+                ->when($request->filled('kategori'), fn ($query) => $query->where('category_id', $request->integer('kategori')))
+                ->when($package === 'internal', fn ($query) => $query->whereNull('package'))
+                ->when(ArticlePackage::tryFrom($package), fn ($query, ArticlePackage $paid) => $query->where('package', $paid))
                 ->oldest('updated_at')
                 ->paginate(self::PER_PAGE)
+                ->withQueryString()
                 ->through(fn (Article $article): array => [
                     'id' => $article->id,
                     'title' => $article->title,
@@ -42,6 +51,12 @@ class ReviewController extends Controller
                     'submitted_label' => $article->updated_at?->diffForHumans(),
                     'preview_url' => route('articles.preview', $article->preview_token),
                 ]),
+            'categories' => Category::query()->orderBy('sort_order')->orderBy('name')->get(['id', 'name']),
+            'packages' => [
+                ['value' => 'internal', 'label' => 'Internal (gratis)'],
+                ...array_map(fn (ArticlePackage $case): array => ['value' => $case->value, 'label' => $case->label()], ArticlePackage::cases()),
+            ],
+            'filters' => $request->only(['q', 'kategori', 'paket']),
         ]);
     }
 

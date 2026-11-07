@@ -27,6 +27,7 @@ class UserController extends Controller
                     $query->where(fn ($inner) => $inner->whereLike('name', $term)->orWhereLike('email', $term));
                 })
                 ->when($request->filled('peran'), fn ($query) => $query->where('role', $request->string('peran')->toString()))
+                ->when($request->filled('status'), fn ($query) => $query->where('is_active', $request->string('status')->toString() === 'aktif'))
                 ->latest('created_at')
                 ->latest('id')
                 ->paginate(20)
@@ -47,7 +48,7 @@ class UserController extends Controller
                     'joined_relative' => $user->created_at?->diffForHumans(),
                 ]),
             'roles' => array_map(fn (UserRole $role): array => ['value' => $role->value, 'label' => $role->label()], UserRole::cases()),
-            'filters' => $request->only(['q', 'peran']),
+            'filters' => $request->only(['q', 'peran', 'status']),
         ]);
     }
 

@@ -1,5 +1,7 @@
 import { router } from '@inertiajs/react';
 import { useState } from 'react';
+import ActionButton from '@/components/admin/action-button';
+import type { ActionTone } from '@/components/admin/action-button';
 import {
     Dialog,
     DialogContent,
@@ -14,16 +16,18 @@ type ConfirmButtonProps = {
     label?: string;
     title?: string;
     description?: string;
-    className?: string;
+    icon?: string;
+    tone?: ActionTone;
 };
 
-/** Delete action guarded by a confirmation dialog. */
+/** Icon-only destructive action guarded by a confirmation dialog. */
 export default function ConfirmButton({
     url,
     label = 'Hapus',
     title = 'Yakin ingin menghapus?',
     description = 'Tindakan ini tidak dapat dibatalkan.',
-    className = 'text-xs font-bold text-rose-600 hover:underline',
+    icon = 'fa-trash-can',
+    tone = 'danger',
 }: ConfirmButtonProps) {
     const [isOpen, setIsOpen] = useState(false);
     const [isProcessing, setIsProcessing] = useState(false);
@@ -41,17 +45,26 @@ export default function ConfirmButton({
 
     return (
         <>
-            <button
-                type="button"
+            <ActionButton
+                label={label}
+                icon={icon}
+                tone={tone}
                 onClick={() => setIsOpen(true)}
-                className={className}
-            >
-                {label}
-            </button>
+            />
             <Dialog open={isOpen} onOpenChange={setIsOpen}>
-                <DialogContent>
-                    <DialogTitle>{title}</DialogTitle>
-                    <DialogDescription>{description}</DialogDescription>
+                <DialogContent className="sm:max-w-md">
+                    <div className="flex items-start gap-4">
+                        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-rose-50 text-rose-600 dark:bg-rose-950 dark:text-rose-400">
+                            <i
+                                className={`fa-solid ${icon}`}
+                                aria-hidden="true"
+                            />
+                        </span>
+                        <div className="space-y-1.5">
+                            <DialogTitle>{title}</DialogTitle>
+                            <DialogDescription>{description}</DialogDescription>
+                        </div>
+                    </div>
                     <DialogFooter>
                         <button
                             type="button"
@@ -64,9 +77,13 @@ export default function ConfirmButton({
                             type="button"
                             onClick={confirm}
                             disabled={isProcessing}
-                            className="inline-flex items-center justify-center rounded-xl bg-rose-600 px-5 py-2.5 text-xs font-bold text-white transition hover:bg-rose-700 disabled:opacity-60"
+                            className="inline-flex items-center justify-center gap-2 rounded-xl bg-rose-600 px-5 py-2.5 text-xs font-bold text-white transition hover:bg-rose-700 disabled:opacity-60"
                         >
-                            {label}
+                            <i
+                                className={`fa-solid ${icon}`}
+                                aria-hidden="true"
+                            />
+                            {isProcessing ? 'Memproses...' : label}
                         </button>
                     </DialogFooter>
                 </DialogContent>

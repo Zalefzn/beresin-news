@@ -23,6 +23,9 @@ class NewsletterController extends Controller
         return Inertia::render('admin/newsletter/index', [
             'subscribers' => NewsletterSubscriber::query()
                 ->when($request->filled('q'), fn ($query) => $query->whereLike('email', '%'.$request->string('q')->toString().'%'))
+                ->when($request->string('status')->toString() === 'aktif', fn ($query) => $query->active())
+                ->when($request->string('status')->toString() === 'menunggu', fn ($query) => $query->whereNull('confirmed_at')->whereNull('unsubscribed_at'))
+                ->when($request->string('status')->toString() === 'berhenti', fn ($query) => $query->whereNotNull('unsubscribed_at'))
                 ->latest('id')
                 ->paginate(30)
                 ->withQueryString()
@@ -33,7 +36,7 @@ class NewsletterController extends Controller
                     'joined_label' => $subscriber->created_at?->translatedFormat('j M Y'),
                 ]),
             'activeCount' => NewsletterSubscriber::query()->active()->count(),
-            'filters' => $request->only('q'),
+            'filters' => $request->only(['q', 'status']),
         ]);
     }
 

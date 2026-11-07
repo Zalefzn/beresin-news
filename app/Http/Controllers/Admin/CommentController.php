@@ -30,6 +30,10 @@ class CommentController extends Controller
         return Inertia::render('admin/comments/index', [
             'comments' => Comment::query()
                 ->where('status', $status)
+                ->when($request->filled('q'), function ($query) use ($request): void {
+                    $term = '%'.$request->string('q')->toString().'%';
+                    $query->where(fn ($inner) => $inner->whereLike('name', $term)->orWhereLike('body', $term)->orWhereLike('email', $term));
+                })
                 ->with(['article.category'])
                 ->latest()
                 ->paginate(20)
@@ -46,6 +50,7 @@ class CommentController extends Controller
                     'article_url' => $comment->article->isPubliclyVisible() ? $comment->article->url() : null,
                 ]),
             'status' => $status->value,
+            'filters' => $request->only('q'),
             'counts' => collect(CommentStatus::cases())
                 ->mapWithKeys(fn (CommentStatus $case): array => [$case->value => Comment::query()->where('status', $case)->count()]),
         ]);

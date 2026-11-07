@@ -1,7 +1,10 @@
 import { Link } from '@inertiajs/react';
+import { useMemo, useState } from 'react';
+import ActionButton, { ActionGroup } from '@/components/admin/action-button';
 import AdminHeader from '@/components/admin/admin-header';
 import ConfirmButton from '@/components/admin/confirm-button';
-import { DataTable, EmptyRow } from '@/components/admin/data-table';
+import { CellStack, DataTable, EmptyRow } from '@/components/admin/data-table';
+import { FilterBar, SearchFilter } from '@/components/admin/filter-bar';
 import { primaryButton } from '@/lib/ui';
 import { create, destroy, edit } from '@/routes/admin/pages';
 
@@ -14,45 +17,100 @@ type PageRow = {
 };
 
 export default function AdminPagesIndex({ pages }: { pages: PageRow[] }) {
+    const [search, setSearch] = useState('');
+
+    const visible = useMemo(
+        () =>
+            pages.filter((page) =>
+                `${page.title} ${page.slug}`
+                    .toLowerCase()
+                    .includes(search.toLowerCase()),
+            ),
+        [pages, search],
+    );
+
     return (
         <>
             <AdminHeader
                 title="Halaman Statis"
+                icon="fa-file-lines"
+                description="Tentang kami, redaksi, pedoman, dan halaman lainnya."
                 actions={
                     <Link href={create()} className={primaryButton}>
+                        <i className="fa-solid fa-plus" aria-hidden="true" />
                         Tambah Halaman
                     </Link>
                 }
             />
-            <DataTable headers={['Judul', 'Slug', 'Diperbarui', 'Aksi']}>
-                {pages.length === 0 && (
-                    <EmptyRow colSpan={4} message="Belum ada halaman." />
+
+            <FilterBar
+                activeCount={search ? 1 : 0}
+                onReset={() => setSearch('')}
+            >
+                <SearchFilter
+                    key={search === '' ? 'empty' : 'filled'}
+                    id="filter-q"
+                    label="Cari halaman"
+                    placeholder="Judul atau slug..."
+                    value={search}
+                    onSearch={setSearch}
+                    className="sm:col-span-2"
+                />
+            </FilterBar>
+
+            <DataTable
+                caption={
+                    <span>
+                        {visible.length} dari {pages.length} halaman
+                    </span>
+                }
+                headers={[
+                    { label: 'Halaman', icon: 'fa-file-lines' },
+                    { label: 'Diperbarui', icon: 'fa-clock-rotate-left' },
+                    'Aksi',
+                ]}
+            >
+                {visible.length === 0 && (
+                    <EmptyRow
+                        colSpan={3}
+                        icon="fa-file-circle-question"
+                        message="Belum ada halaman."
+                    />
                 )}
-                {pages.map((page) => (
+                {visible.map((page) => (
                     <tr key={page.id}>
-                        <td className="px-4 py-3 font-bold">{page.title}</td>
-                        <td className="px-4 py-3">{page.slug}</td>
+                        <td className="max-w-md px-4 py-3">
+                            <CellStack
+                                title={page.title}
+                                subtitle={
+                                    <span className="font-mono">
+                                        /halaman/{page.slug}
+                                    </span>
+                                }
+                            />
+                        </td>
                         <td className="px-4 py-3 whitespace-nowrap">
                             {page.updated_label}
                         </td>
                         <td className="px-4 py-3">
-                            <div className="flex gap-3 whitespace-nowrap">
-                                <Link
-                                    href={edit(page.id)}
-                                    className="font-bold text-brand-blue hover:underline dark:text-sky-400"
-                                >
-                                    Edit
-                                </Link>
-                                <a
+                            <ActionGroup>
+                                <ActionButton
+                                    label="Lihat di situs"
+                                    icon="fa-arrow-up-right-from-square"
                                     href={page.url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="font-bold text-slate-600 hover:underline dark:text-slate-300"
-                                >
-                                    Lihat
-                                </a>
-                                <ConfirmButton url={destroy.url(page.id)} />
-                            </div>
+                                    external
+                                />
+                                <ActionButton
+                                    label="Edit halaman"
+                                    icon="fa-pen-to-square"
+                                    tone="primary"
+                                    href={edit.url(page.id)}
+                                />
+                                <ConfirmButton
+                                    url={destroy.url(page.id)}
+                                    label="Hapus halaman"
+                                />
+                            </ActionGroup>
                         </td>
                     </tr>
                 ))}

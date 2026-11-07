@@ -35,15 +35,25 @@ export default function AdminPageForm({ page }: { page: PageData | null }) {
     return (
         <>
             <AdminHeader
+                icon="fa-file-lines"
                 title={page ? 'Edit Halaman' : 'Tambah Halaman'}
                 actions={
                     <Link href={index()} className={secondaryButton}>
+                        <i
+                            className="fa-solid fa-arrow-left"
+                            aria-hidden="true"
+                        />
                         Kembali
                     </Link>
                 }
             />
             <form onSubmit={submit} className={`${card} space-y-4 p-5`}>
-                <Field id="title" label="Judul" error={errors.title}>
+                <Field
+                    id="title"
+                    icon="fa-heading"
+                    label="Judul"
+                    error={errors.title}
+                >
                     <input
                         id="title"
                         value={data.title}
@@ -56,6 +66,7 @@ export default function AdminPageForm({ page }: { page: PageData | null }) {
                 </Field>
                 <Field
                     id="slug"
+                    icon="fa-link"
                     label="Slug"
                     error={errors.slug}
                     hint="Kosongkan agar dibuat otomatis."
@@ -72,8 +83,12 @@ export default function AdminPageForm({ page }: { page: PageData | null }) {
                 <div>
                     <span
                         id="page-body-label"
-                        className="mb-1.5 block text-xs font-bold text-slate-700 dark:text-slate-200"
+                        className="mb-1.5 flex items-center gap-1.5 text-xs font-bold text-slate-700 dark:text-slate-200"
                     >
+                        <i
+                            className="fa-solid fa-file-pen w-3.5 text-center text-[11px] text-slate-400"
+                            aria-hidden="true"
+                        />
                         Isi Halaman
                     </span>
                     <RichTextEditor
@@ -89,6 +104,7 @@ export default function AdminPageForm({ page }: { page: PageData | null }) {
                 </div>
                 <Field
                     id="meta_description"
+                    icon="fa-align-left"
                     label="Meta Description"
                     error={errors.meta_description}
                 >
@@ -107,6 +123,7 @@ export default function AdminPageForm({ page }: { page: PageData | null }) {
                     disabled={processing}
                     className={primaryButton}
                 >
+                    <i className="fa-solid fa-floppy-disk" aria-hidden="true" />
                     Simpan Halaman
                 </button>
             </form>

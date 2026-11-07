@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\ArticlePackage;
 use App\Enums\OrderStatus;
 use App\Http\Controllers\Controller;
 use App\Models\ArticleOrder;
@@ -24,6 +25,14 @@ class OrderController extends Controller
             'orders' => ArticleOrder::query()
                 ->with(['article', 'user'])
                 ->when(OrderStatus::tryFrom($request->string('status')->toString()), fn ($query, OrderStatus $status) => $query->where('status', $status))
+                ->when(ArticlePackage::tryFrom($request->string('paket')->toString()), fn ($query, ArticlePackage $package) => $query->where('package', $package))
+                ->when($request->filled('q'), function ($query) use ($request): void {
+                    $term = '%'.$request->string('q')->toString().'%';
+                    $query->where(fn ($inner) => $inner
+                        ->whereLike('midtrans_order_id', $term)
+                        ->orWhereHas('article', fn ($article) => $article->withTrashed()->whereLike('title', $term))
+                        ->orWhereHas('user', fn ($user) => $user->whereLike('name', $term)));
+                })
                 ->latest('id')
                 ->paginate(self::PER_PAGE)
                 ->withQueryString()
@@ -41,7 +50,8 @@ class OrderController extends Controller
                     'paid_label' => $order->paid_at?->translatedFormat('j M Y, H:i'),
                 ]),
             'statuses' => array_map(fn (OrderStatus $status): array => ['value' => $status->value, 'label' => $status->label()], OrderStatus::cases()),
-            'filters' => $request->only('status'),
+            'packages' => array_map(fn (ArticlePackage $package): array => ['value' => $package->value, 'label' => $package->label()], ArticlePackage::cases()),
+            'filters' => $request->only(['status', 'paket', 'q']),
         ]);
     }
 }

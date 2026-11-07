@@ -2,7 +2,7 @@ import { Link, useForm } from '@inertiajs/react';
 import type { FormEvent } from 'react';
 import { useEffect, useRef, useState } from 'react';
 import AdminHeader from '@/components/admin/admin-header';
-import Field from '@/components/admin/field';
+import Field, { SwitchField } from '@/components/admin/field';
 import RichTextEditor from '@/components/admin/rich-text-editor';
 import { card, primaryButton, secondaryButton, textInput } from '@/lib/ui';
 import { autosave, index, store, update } from '@/routes/admin/articles';
@@ -135,6 +135,7 @@ export default function AdminArticleForm({
     return (
         <>
             <AdminHeader
+                icon={article ? 'fa-pen-to-square' : 'fa-feather-pointed'}
                 title={article ? 'Edit Artikel' : 'Tulis Artikel'}
                 description={
                     savedAt
@@ -144,6 +145,10 @@ export default function AdminArticleForm({
                 actions={
                     <>
                         <Link href={index()} className={secondaryButton}>
+                            <i
+                                className="fa-solid fa-arrow-left"
+                                aria-hidden="true"
+                            />
                             Kembali
                         </Link>
                         {article && (
@@ -153,6 +158,10 @@ export default function AdminArticleForm({
                                 rel="noopener noreferrer"
                                 className={secondaryButton}
                             >
+                                <i
+                                    className="fa-solid fa-eye"
+                                    aria-hidden="true"
+                                />
                                 Pratinjau
                             </a>
                         )}
@@ -166,7 +175,12 @@ export default function AdminArticleForm({
             >
                 <div className="space-y-4 lg:col-span-8">
                     <div className={`${card} space-y-4 p-5`}>
-                        <Field id="title" label="Judul" error={errors.title}>
+                        <Field
+                            id="title"
+                            icon="fa-heading"
+                            label="Judul"
+                            error={errors.title}
+                        >
                             <input
                                 id="title"
                                 value={data.title}
@@ -180,6 +194,7 @@ export default function AdminArticleForm({
                         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                             <Field
                                 id="slug"
+                                icon="fa-link"
                                 label="Slug"
                                 error={errors.slug}
                                 hint="Kosongkan agar dibuat otomatis dari judul."
@@ -195,6 +210,7 @@ export default function AdminArticleForm({
                             </Field>
                             <Field
                                 id="dateline"
+                                icon="fa-location-dot"
                                 label="Dateline"
                                 error={errors.dateline}
                                 hint="Contoh: JAKARTA"
@@ -211,6 +227,7 @@ export default function AdminArticleForm({
                         </div>
                         <Field
                             id="excerpt"
+                            icon="fa-quote-left"
                             label={`Ringkasan (${data.excerpt.length}/${EXCERPT_MAX_LENGTH})`}
                             error={errors.excerpt}
                         >
@@ -228,8 +245,12 @@ export default function AdminArticleForm({
                         <div>
                             <span
                                 id="body-label"
-                                className="mb-1.5 block text-xs font-bold text-slate-700 dark:text-slate-200"
+                                className="mb-1.5 flex items-center gap-1.5 text-xs font-bold text-slate-700 dark:text-slate-200"
                             >
+                                <i
+                                    className="fa-solid fa-file-pen w-3.5 text-center text-[11px] text-slate-400"
+                                    aria-hidden="true"
+                                />
                                 Isi Artikel
                             </span>
                             <RichTextEditor
@@ -246,11 +267,16 @@ export default function AdminArticleForm({
                     </div>
 
                     <div className={`${card} space-y-4 p-5`}>
-                        <h2 className="text-sm font-extrabold text-slate-900 dark:text-white">
+                        <h2 className="flex items-center gap-2 text-sm font-extrabold text-slate-900 dark:text-white">
+                            <i
+                                className="fa-solid fa-magnifying-glass-chart text-brand-blue dark:text-sky-400"
+                                aria-hidden="true"
+                            />
                             SEO
                         </h2>
                         <Field
                             id="meta_title"
+                            icon="fa-tag"
                             label="Meta Title"
                             error={errors.meta_title}
                         >
@@ -265,6 +291,7 @@ export default function AdminArticleForm({
                         </Field>
                         <Field
                             id="meta_description"
+                            icon="fa-align-left"
                             label="Meta Description"
                             error={errors.meta_description}
                         >
@@ -302,6 +329,7 @@ export default function AdminArticleForm({
                     <div className={`${card} space-y-4 p-5`}>
                         <Field
                             id="status"
+                            icon="fa-signal"
                             label="Status"
                             error={errors.status}
                             hint={
@@ -331,6 +359,7 @@ export default function AdminArticleForm({
                         {canPublish && (
                             <Field
                                 id="published_at"
+                                icon="fa-calendar-check"
                                 label="Jadwal Terbit"
                                 error={errors.published_at}
                                 hint="Wajib untuk status Terjadwal. Waktu dalam WIB."
@@ -361,6 +390,7 @@ export default function AdminArticleForm({
                     <div className={`${card} space-y-4 p-5`}>
                         <Field
                             id="category_id"
+                            icon="fa-folder"
                             label="Kategori"
                             error={errors.category_id}
                         >
@@ -387,6 +417,7 @@ export default function AdminArticleForm({
                         </Field>
                         <Field
                             id="tags"
+                            icon="fa-hashtag"
                             label="Tag"
                             error={errors.tags}
                             hint="Pisahkan dengan koma. Tag baru otomatis dibuat."
@@ -408,32 +439,47 @@ export default function AdminArticleForm({
                             />
                         </Field>
                         {canPublish && (
-                            <fieldset className="space-y-2 text-xs text-slate-700 dark:text-slate-200">
-                                <legend className="mb-1 font-bold">Opsi</legend>
+                            <fieldset className="space-y-2">
+                                <legend className="mb-1.5 flex items-center gap-1.5 text-xs font-bold text-slate-700 dark:text-slate-200">
+                                    <i
+                                        className="fa-solid fa-sliders w-3.5 text-center text-[11px] text-slate-400"
+                                        aria-hidden="true"
+                                    />
+                                    Opsi Tampilan
+                                </legend>
                                 {(
                                     [
-                                        ['is_headline', 'Headline'],
-                                        ['is_trending', 'Trending'],
-                                        ['is_breaking', 'Breaking'],
+                                        [
+                                            'is_headline',
+                                            'Headline',
+                                            'Tampil di Sorotan Utama beranda.',
+                                            'fa-star',
+                                        ],
+                                        [
+                                            'is_trending',
+                                            'Trending',
+                                            'Masuk daftar Topik Hangat.',
+                                            'fa-fire',
+                                        ],
+                                        [
+                                            'is_breaking',
+                                            'Breaking',
+                                            'Ikut berjalan di ticker breaking news.',
+                                            'fa-bolt',
+                                        ],
                                     ] as const
-                                ).map(([key, label]) => (
-                                    <label
+                                ).map(([key, label, description, icon]) => (
+                                    <SwitchField
                                         key={key}
-                                        className="flex items-center gap-2"
-                                    >
-                                        <input
-                                            type="checkbox"
-                                            checked={data[key]}
-                                            onChange={(event) =>
-                                                setData(
-                                                    key,
-                                                    event.target.checked,
-                                                )
-                                            }
-                                            className="rounded accent-brand-blue"
-                                        />{' '}
-                                        {label}
-                                    </label>
+                                        id={key}
+                                        label={label}
+                                        description={description}
+                                        icon={icon}
+                                        checked={data[key]}
+                                        onChange={(checked) =>
+                                            setData(key, checked)
+                                        }
+                                    />
                                 ))}
                             </fieldset>
                         )}
@@ -442,6 +488,7 @@ export default function AdminArticleForm({
                     <div className={`${card} space-y-4 p-5`}>
                         <Field
                             id="cover"
+                            icon="fa-image"
                             label="Gambar Sampul"
                             error={errors.cover}
                             hint="JPG, PNG, atau WebP. Maksimal 5 MB."
@@ -470,6 +517,7 @@ export default function AdminArticleForm({
                         </Field>
                         <Field
                             id="cover_caption"
+                            icon="fa-closed-captioning"
                             label="Keterangan Foto"
                             error={errors.cover_caption}
                         >
@@ -484,6 +532,7 @@ export default function AdminArticleForm({
                         </Field>
                         <Field
                             id="cover_credit"
+                            icon="fa-camera"
                             label="Kredit Foto"
                             error={errors.cover_credit}
                         >
