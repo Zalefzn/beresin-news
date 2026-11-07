@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Admin;
 
+use Closure;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -31,9 +32,21 @@ class SaveSettingsRequest extends FormRequest
             'footer_text' => ['nullable', 'string', 'max:500'],
             'analytics_code' => ['nullable', 'string', 'max:30', 'regex:/^[A-Za-z0-9-]+$/'],
             'google_site_verification' => ['nullable', 'string', 'max:100', 'regex:/^[A-Za-z0-9_-]+$/'],
-            'price_general' => ['sometimes', 'required', 'integer', 'min:1000', 'max:100000000'],
-            'price_branding' => ['sometimes', 'required', 'integer', 'min:1000', 'max:100000000'],
+            'price_general' => ['sometimes', 'required', 'integer', 'min:0', 'max:100000000', $this->gatewayMinimum(...)],
+            'price_branding' => ['sometimes', 'required', 'integer', 'min:0', 'max:100000000', $this->gatewayMinimum(...)],
         ];
+    }
+
+    /**
+     * Zero means free; any paid price must reach the payment gateway minimum.
+     *
+     * @param  Closure(string): mixed  $fail
+     */
+    public function gatewayMinimum(string $attribute, mixed $value, Closure $fail): void
+    {
+        if (is_numeric($value) && (int) $value > 0 && (int) $value < 1000) {
+            $fail('Harga minimal Rp1.000, atau isi 0 agar gratis.');
+        }
     }
 
     /** @return array<string, string> */

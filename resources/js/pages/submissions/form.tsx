@@ -30,6 +30,7 @@ type PackageOption = {
     label: string;
     public_label: string;
     price_label: string;
+    is_free: boolean;
 };
 
 type SubmissionFormProps = {
@@ -331,12 +332,19 @@ export default function SubmissionForm({
                                         className={`${primaryButton} w-full`}
                                     >
                                         <i
-                                            className="fa-solid fa-credit-card"
+                                            className={cn(
+                                                'fa-solid',
+                                                selected?.is_free
+                                                    ? 'fa-paper-plane'
+                                                    : 'fa-credit-card',
+                                            )}
                                             aria-hidden="true"
                                         />
                                         {processing
                                             ? 'Memproses...'
-                                            : `Simpan & Bayar ${selected?.price_label ?? ''}`}
+                                            : selected?.is_free
+                                              ? 'Simpan & Ajukan Gratis'
+                                              : `Simpan & Bayar ${selected?.price_label ?? ''}`}
                                     </button>
                                     <button
                                         type="button"

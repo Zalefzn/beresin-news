@@ -14,6 +14,12 @@ use Illuminate\Validation\Rules\Password;
 
 class SaveUserRequest extends FormRequest
 {
+    /**
+     * The admin hands this password to the user, so it skips the stricter self-service rules
+     * (mixed case, symbols, breach check) that kept rejecting valid passwords in production.
+     */
+    private const int ADMIN_PASSWORD_MIN = 8;
+
     public function authorize(): bool
     {
         return $this->user()?->isAdmin() ?? false;
@@ -34,7 +40,7 @@ class SaveUserRequest extends FormRequest
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($target?->id)],
             'slug' => ['required', 'string', 'max:255', 'regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/', Rule::unique('users', 'slug')->ignore($target?->id)],
-            'password' => [$target ? 'nullable' : 'required', 'string', Password::defaults()],
+            'password' => [$target ? 'nullable' : 'required', 'string', Password::min(self::ADMIN_PASSWORD_MIN)],
             'role' => ['required', Rule::enum(UserRole::class)],
             'avatar' => ['nullable', 'url:https,http', 'max:255'],
             'job_title' => ['nullable', 'string', 'max:255'],

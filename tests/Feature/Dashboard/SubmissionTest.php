@@ -347,10 +347,41 @@ test('prices are editable by the admin only', function () {
         ->assertInertia(fn (Assert $page) => $page->where('packages.0.price_label', 'Rp35.000')->where('packages.1.price_label', 'Rp60.000'));
 });
 
-test('a price below the gateway minimum is rejected', function () {
-    $this->actingAs(User::factory()->admin()->create())->put(route('admin.settings.update'), [
-        'site_name' => 'BeresinNews', 'weather_city' => 'Jakarta', 'weather_temp' => '29°C', 'price_general' => 0, 'price_branding' => 50000,
-    ])->assertSessionHasErrors('price_general');
+test('a paid price below the gateway minimum is rejected but zero is allowed', function () {
+    $admin = User::factory()->admin()->create();
+    $settings = ['site_name' => 'BeresinNews', 'weather_city' => 'Jakarta', 'weather_temp' => '29°C', 'price_branding' => 50000];
+
+    $this->actingAs($admin)->put(route('admin.settings.update'), [...$settings, 'price_general' => 500])
+        ->assertSessionHasErrors('price_general');
+
+    $this->actingAs($admin)->put(route('admin.settings.update'), [...$settings, 'price_general' => 0])
+        ->assertSessionHasNoErrors();
+
+    expect(Setting::query()->where('key', 'price_general')->value('value'))->toBe(0);
+});
+
+test('a free package skips Midtrans and goes straight to review', function () {
+    Http::fake();
+    Notification::fake();
+    Setting::query()->create(['key' => 'price_general', 'value' => 0]);
+    $admin = User::factory()->admin()->create();
+    $user = User::factory()->create();
+
+    $this->actingAs($user)->get(route('submissions.create'))
+        ->assertInertia(fn (Assert $page) => $page->where('packages.0.price_label', 'Gratis')->where('packages.0.is_free', true));
+
+    $this->actingAs($user)->post(route('submissions.store'), submissionPayload(['pay_now' => true]))
+        ->assertRedirect(route('submissions.index'));
+
+    $article = Article::query()->firstOrFail();
+    $order = ArticleOrder::query()->firstOrFail();
+
+    expect($article->status)->toBe(ArticleStatus::Review)
+        ->and($order->amount)->toBe(0)
+        ->and($order->status)->toBe(OrderStatus::Paid);
+    Http::assertNotSent(fn ($request) => str_contains($request->url(), 'midtrans'));
+    Notification::assertSentTo($admin, SubmissionNotification::class);
+    Notification::assertNotSentTo($user, SubmissionNotification::class);
 });
 
 test('notifications are private and opening one marks it read', function () {

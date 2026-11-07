@@ -14,6 +14,7 @@ use App\Models\ArticleView;
 use App\Models\Comment;
 use App\Models\NewsletterSubscriber;
 use App\Models\User;
+use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -22,8 +23,15 @@ class DashboardController extends Controller
 {
     private const int CHART_DAYS = 30;
 
-    public function __invoke(GetPopularArticles $popularArticles): Response
+    private const int LATEST_USERS = 10;
+
+    private const int NEW_USER_DAYS = 7;
+
+    public function __invoke(Request $request, GetPopularArticles $popularArticles): Response
     {
+        /** @var User $viewer */
+        $viewer = $request->user();
+
         return Inertia::render('admin/dashboard', [
             'stats' => [
                 'publishedToday' => Article::query()->published()->where('published_at', '>=', today())->count(),
@@ -33,6 +41,8 @@ class DashboardController extends Controller
                 'pendingReviews' => Article::query()->where('status', ArticleStatus::Review)->count(),
                 'users' => User::query()->count(),
             ],
+            // Emails are private, so only admins (who manage users) get the list.
+            'latestUsers' => $viewer->isAdmin() ? $this->latestUsers() : null,
             'viewsChart' => Inertia::defer(fn (): array => $this->viewsChart()->all()),
             'popular' => ArticleCardResource::collection($popularArticles->handle(now()->subDay())),
             'activity' => Article::query()->with('author')->latest('updated_at')->limit(6)->get()
@@ -44,6 +54,28 @@ class DashboardController extends Controller
                     'time' => $article->updated_at?->diffForHumans(),
                 ]),
         ]);
+    }
+
+    /**
+     * @return Collection<int, array{id: int, name: string, email: string, role_label: string, is_active: bool, is_new: bool, joined: string|null, joined_at: string|null}>
+     */
+    private function latestUsers(): Collection
+    {
+        return User::query()
+            ->latest('created_at')
+            ->latest('id')
+            ->limit(self::LATEST_USERS)
+            ->get()
+            ->map(fn (User $user): array => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'role_label' => $user->role->label(),
+                'is_active' => $user->is_active,
+                'is_new' => $user->created_at?->gte(now()->subDays(self::NEW_USER_DAYS)) ?? false,
+                'joined' => $user->created_at?->diffForHumans(),
+                'joined_at' => $user->created_at?->toIso8601String(),
+            ]);
     }
 
     /**

@@ -13,7 +13,9 @@ use App\Models\NewsletterSubscriber;
 use App\Models\Page;
 use App\Models\Setting;
 use App\Models\User;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Queue;
+use Illuminate\Validation\Rules\Password;
 use Inertia\Testing\AssertableInertia as Assert;
 
 test('approving a comment updates the article counter', function () {
@@ -131,6 +133,40 @@ test('admins manage users but cannot lock themselves out', function () {
 
     $this->actingAs($admin)->delete(route('admin.users.destroy', $admin));
     expect($admin->fresh()->is_active)->toBeTrue();
+});
+
+test('only admins see the latest users on the dashboard, newest first', function () {
+    $admin = User::factory()->admin()->create(['created_at' => now()->subMonth()]);
+    User::factory()->create(['name' => 'Pembaca Lama', 'created_at' => now()->subWeeks(2)]);
+    User::factory()->create(['name' => 'Pembaca Baru', 'created_at' => now()->subHour()]);
+
+    $this->actingAs($admin)->get(route('admin.dashboard'))
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('latestUsers.0.name', 'Pembaca Baru')
+            ->where('latestUsers.0.is_new', true)
+            ->where('latestUsers.1.name', 'Pembaca Lama')
+            ->where('latestUsers.1.is_new', false));
+
+    $this->actingAs($admin)->get(route('admin.users.index'))
+        ->assertInertia(fn (Assert $page) => $page->where('users.data.0.name', 'Pembaca Baru'));
+
+    $this->actingAs(User::factory()->editor()->create())->get(route('admin.dashboard'))
+        ->assertInertia(fn (Assert $page) => $page->where('latestUsers', null));
+});
+
+test('admins can set a new password for a user despite the strict self-service rules', function () {
+    Password::defaults(fn (): Password => Password::min(12)->mixedCase()->numbers()->symbols());
+    $admin = User::factory()->admin()->create();
+    $writer = User::factory()->writer()->create();
+    $payload = ['name' => $writer->name, 'email' => $writer->email, 'slug' => $writer->slug, 'role' => 'writer', 'is_active' => true];
+
+    $this->actingAs($admin)->put(route('admin.users.update', $writer), [...$payload, 'password' => 'pendek'])
+        ->assertSessionHasErrors('password');
+
+    $this->actingAs($admin)->put(route('admin.users.update', $writer), [...$payload, 'password' => 'redaksibaru'])
+        ->assertSessionHasNoErrors();
+
+    expect(Hash::check('redaksibaru', $writer->fresh()->password))->toBeTrue();
 });
 
 test('settings are saved and reach the public site', function () {

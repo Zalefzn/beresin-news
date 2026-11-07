@@ -27,7 +27,8 @@ class UserController extends Controller
                     $query->where(fn ($inner) => $inner->whereLike('name', $term)->orWhereLike('email', $term));
                 })
                 ->when($request->filled('peran'), fn ($query) => $query->where('role', $request->string('peran')->toString()))
-                ->orderBy('name')
+                ->latest('created_at')
+                ->latest('id')
                 ->paginate(20)
                 ->withQueryString()
                 ->through(fn (User $user): array => [
@@ -41,6 +42,9 @@ class UserController extends Controller
                     'job_title' => $user->job_title,
                     'bio' => $user->bio,
                     'is_active' => $user->is_active,
+                    'is_new' => $user->created_at?->gte(now()->subDays(7)) ?? false,
+                    'joined' => $user->created_at?->translatedFormat('j M Y, H:i'),
+                    'joined_relative' => $user->created_at?->diffForHumans(),
                 ]),
             'roles' => array_map(fn (UserRole $role): array => ['value' => $role->value, 'label' => $role->label()], UserRole::cases()),
             'filters' => $request->only(['q', 'peran']),

@@ -5,6 +5,7 @@ import AdminHeader from '@/components/admin/admin-header';
 import ConfirmButton from '@/components/admin/confirm-button';
 import { DataTable, EmptyRow } from '@/components/admin/data-table';
 import Field from '@/components/admin/field';
+import UserStatusBadge from '@/components/admin/user-status-badge';
 import Pagination from '@/components/news/pagination';
 import {
     Dialog,
@@ -27,6 +28,9 @@ type UserRow = {
     job_title: string | null;
     bio: string | null;
     is_active: boolean;
+    is_new: boolean;
+    joined: string | null;
+    joined_relative: string | null;
 };
 
 type RoleOption = { value: string; label: string };
@@ -100,7 +104,11 @@ function UserDialog({
                         id="password"
                         label="Kata Sandi"
                         error={errors.password}
-                        hint={user ? 'Kosongkan jika tidak diubah.' : undefined}
+                        hint={
+                            user
+                                ? 'Minimal 8 karakter. Kosongkan jika tidak diubah.'
+                                : 'Minimal 8 karakter.'
+                        }
                     >
                         <input
                             id="password"
@@ -276,12 +284,13 @@ export default function AdminUsersIndex({ users, roles, filters }: UsersProps) {
                     'Email',
                     'Peran',
                     'Jabatan',
+                    'Bergabung',
                     'Status',
                     'Aksi',
                 ]}
             >
                 {users.data.length === 0 && (
-                    <EmptyRow colSpan={6} message="Tidak ada pengguna." />
+                    <EmptyRow colSpan={7} message="Tidak ada pengguna." />
                 )}
                 {users.data.map((user) => (
                     <tr key={user.id}>
@@ -291,8 +300,17 @@ export default function AdminUsersIndex({ users, roles, filters }: UsersProps) {
                         <td className="px-4 py-3">{user.email}</td>
                         <td className="px-4 py-3">{user.role_label}</td>
                         <td className="px-4 py-3">{user.job_title ?? '-'}</td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                            <span className="block">{user.joined ?? '-'}</span>
+                            <span className="text-[11px] text-slate-400">
+                                {user.joined_relative}
+                            </span>
+                        </td>
                         <td className="px-4 py-3">
-                            {user.is_active ? 'Aktif' : 'Nonaktif'}
+                            <UserStatusBadge
+                                isActive={user.is_active}
+                                isNew={user.is_new}
+                            />
                         </td>
                         <td className="px-4 py-3">
                             <div className="flex gap-3 whitespace-nowrap">

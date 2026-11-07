@@ -19,6 +19,7 @@ type Submission = {
     status_label: string;
     is_paid: boolean;
     price_label: string;
+    is_free: boolean;
     rejection_reason: string | null;
     updated_label: string | null;
     public_url: string | null;
@@ -115,7 +116,13 @@ function SubmissionCard({ submission }: { submission: Submission }) {
                     </p>
                 </div>
                 <span className="rounded-md bg-slate-100 px-2.5 py-1 text-[10px] font-bold text-slate-700 uppercase dark:bg-slate-800 dark:text-slate-200">
-                    {submission.is_paid ? 'Lunas' : 'Belum Bayar'}
+                    {submission.is_paid
+                        ? submission.price_label === 'Gratis'
+                            ? 'Gratis'
+                            : 'Lunas'
+                        : submission.is_free
+                          ? 'Belum Diajukan'
+                          : 'Belum Bayar'}
                 </span>
             </div>
 
@@ -136,12 +143,18 @@ function SubmissionCard({ submission }: { submission: Submission }) {
                         className={primaryButton}
                     >
                         <i
-                            className="fa-solid fa-credit-card"
+                            className={
+                                submission.is_free
+                                    ? 'fa-solid fa-paper-plane'
+                                    : 'fa-solid fa-credit-card'
+                            }
                             aria-hidden="true"
                         />
                         {isPaying
                             ? 'Memproses...'
-                            : `Bayar ${submission.price_label}`}
+                            : submission.is_free
+                              ? 'Ajukan Gratis'
+                              : `Bayar ${submission.price_label}`}
                     </button>
                 )}
                 {submission.status === 'rejected' && submission.is_paid && (

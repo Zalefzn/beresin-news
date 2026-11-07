@@ -263,12 +263,12 @@ export default function AdminSettingsIndex({
                         id="price_general"
                         label="Berita Umum (Rp)"
                         error={errors.price_general}
-                        hint="Hanya berlaku untuk pesanan baru."
+                        hint="Isi 0 agar gratis. Hanya berlaku untuk pesanan baru."
                     >
                         <input
                             id="price_general"
                             type="number"
-                            min={1000}
+                            min={0}
                             step={1000}
                             value={data.price_general}
                             onChange={(event) =>
@@ -284,12 +284,12 @@ export default function AdminSettingsIndex({
                         id="price_branding"
                         label="Berita Khusus / Branding (Rp)"
                         error={errors.price_branding}
-                        hint="Hanya berlaku untuk pesanan baru."
+                        hint="Isi 0 agar gratis. Hanya berlaku untuk pesanan baru."
                     >
                         <input
                             id="price_branding"
                             type="number"
-                            min={1000}
+                            min={0}
                             step={1000}
                             value={data.price_branding}
                             onChange={(event) =>

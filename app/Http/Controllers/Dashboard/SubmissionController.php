@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Dashboard;
 
 use App\Actions\ApplyMidtransStatus;
+use App\Actions\CompleteFreeSubmission;
 use App\Actions\GenerateArticleSlug;
 use App\Actions\GetSharedSiteData;
 use App\Actions\MidtransGateway;
@@ -40,6 +41,7 @@ class SubmissionController extends Controller
         private GenerateArticleSlug $slugs,
         private GetSharedSiteData $site,
         private StartArticlePayment $startPayment,
+        private CompleteFreeSubmission $completeFree,
     ) {}
 
     public function index(Request $request): Response
@@ -80,12 +82,15 @@ class SubmissionController extends Controller
         ]);
         $this->persist($article, $request);
 
-        $user->notify(SubmissionNotification::paymentRequired(
-            $article,
-            $this->rupiah($this->site->packagePrice($this->packageOf($article))),
-        ));
+        $price = $this->site->packagePrice($this->packageOf($article));
 
-        return $this->afterSave($article, $request, 'Naskah tersimpan. Selesaikan pembayaran agar naskah ditinjau admin.');
+        if ($price > 0) {
+            $user->notify(SubmissionNotification::paymentRequired($article, $this->rupiah($price)));
+        }
+
+        return $this->afterSave($article, $request, $price > 0
+            ? 'Naskah tersimpan. Selesaikan pembayaran agar naskah ditinjau admin.'
+            : 'Naskah tersimpan sebagai draf. Ajukan kapan saja, paket ini gratis.');
     }
 
     public function update(SaveSubmissionRequest $request, Article $article): HttpResponse
@@ -231,6 +236,13 @@ class SubmissionController extends Controller
         /** @var User $user */
         $user = $request->user();
 
+        if ($this->site->packagePrice($this->packageOf($article)) === 0) {
+            $this->completeFree->handle($article, $user);
+            Inertia::flash('success', 'Naskah diajukan gratis dan menunggu tinjauan admin.');
+
+            return redirect()->route('submissions.index');
+        }
+
         try {
             return Inertia::location($this->startPayment->handle($article, $user));
         } catch (Throwable $exception) {
@@ -255,6 +267,7 @@ class SubmissionController extends Controller
             'status' => $article->status->value,
             'status_label' => $article->status->label(),
             'is_paid' => $isPaid,
+            'is_free' => ! $isPaid && $this->site->packagePrice($package) === 0,
             'price_label' => $this->rupiah($isPaid
                 ? (int) $article->orders->firstWhere('status', OrderStatus::Paid)?->amount
                 : $this->site->packagePrice($package)),
@@ -290,6 +303,7 @@ class SubmissionController extends Controller
                 'label' => $package->label(),
                 'public_label' => $package->publicLabel(),
                 'price_label' => $this->rupiah($this->site->packagePrice($package)),
+                'is_free' => $this->site->packagePrice($package) === 0,
             ], ArticlePackage::cases()),
         ]);
     }
@@ -301,6 +315,10 @@ class SubmissionController extends Controller
 
     private function rupiah(int $amount): string
     {
+        if ($amount === 0) {
+            return 'Gratis';
+        }
+
         return 'Rp'.number_format($amount, 0, ',', '.');
     }
 }
