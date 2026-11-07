@@ -153,6 +153,23 @@ test('a valid paid webhook sends the article to admin review', function () {
     Notification::assertSentTo($admin, SubmissionNotification::class, fn ($notification) => $notification->title === 'Naskah menunggu tinjauan');
 });
 
+test('admin alerts are emailed to the redaksi inbox and only shown in the admin bell', function () {
+    Notification::fake();
+    config(['services.newsroom.email' => 'redaksi@example.com']);
+    $admin = User::factory()->admin()->create();
+    $order = ArticleOrder::factory()->create(['article_id' => Article::factory()->draft()->create(['package' => ArticlePackage::General])->id]);
+
+    $this->postJson(route('midtrans.notification'), midtransPayload($order))->assertOk();
+
+    Notification::assertSentOnDemand(
+        SubmissionNotification::class,
+        fn ($notification, array $channels, object $notifiable) => $notifiable->routes['mail'] === 'redaksi@example.com'
+            && $channels === ['mail']
+            && $notification->title === 'Naskah menunggu tinjauan',
+    );
+    Notification::assertSentTo($admin, SubmissionNotification::class, fn ($notification, array $channels) => $channels === ['database']);
+});
+
 test('the webhook rejects forged signatures and wrong amounts', function () {
     $article = Article::factory()->draft()->create(['package' => ArticlePackage::General]);
     $order = ArticleOrder::factory()->create(['article_id' => $article->id]);

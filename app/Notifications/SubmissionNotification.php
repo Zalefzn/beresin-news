@@ -8,6 +8,7 @@ use App\Models\Article;
 use App\Models\ArticleOrder;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Notifications\AnonymousNotifiable;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
@@ -20,7 +21,16 @@ class SubmissionNotification extends Notification implements ShouldQueue
         public string $message,
         public string $url,
         public string $actionLabel,
+        public bool $sendsMail = true,
     ) {}
+
+    /**
+     * A copy that only shows in the notification bell, for recipients who already get the email elsewhere.
+     */
+    public function withoutMail(): self
+    {
+        return new self($this->title, $this->message, $this->url, $this->actionLabel, sendsMail: false);
+    }
 
     public static function paymentRequired(Article $article, string $price): self
     {
@@ -85,7 +95,12 @@ class SubmissionNotification extends Notification implements ShouldQueue
     /** @return array<int, string> */
     public function via(object $notifiable): array
     {
-        return ['database', 'mail'];
+        // A routed address (the redaksi inbox) has no database row to store a notification in.
+        if ($notifiable instanceof AnonymousNotifiable) {
+            return ['mail'];
+        }
+
+        return $this->sendsMail ? ['database', 'mail'] : ['database'];
     }
 
     public function toMail(object $notifiable): MailMessage

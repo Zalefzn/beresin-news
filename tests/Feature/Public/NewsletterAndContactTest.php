@@ -50,9 +50,10 @@ test('confirm and unsubscribe links work by token', function () {
     $this->get(route('newsletter.confirm', 'token-salah'))->assertNotFound();
 });
 
-test('a contact message is queued to the newsroom', function () {
+test('a contact message is queued to the newsroom inbox, not the public contact email', function () {
     Mail::fake();
-    Setting::query()->create(['key' => 'contact', 'value' => ['email' => 'redaksi@example.com']]);
+    config(['services.newsroom.email' => 'redaksi@example.com']);
+    Setting::query()->create(['key' => 'contact', 'value' => ['email' => 'publik@example.com']]);
 
     $this->post(route('contact.store'), [
         'name' => 'Budi',

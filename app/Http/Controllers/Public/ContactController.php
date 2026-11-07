@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Public;
 
-use App\Actions\GetSharedSiteData;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Public\StoreContactMessageRequest;
 use App\Mail\ContactMessageMail;
@@ -20,15 +19,15 @@ class ContactController extends Controller
         return Inertia::render('contact/index');
     }
 
-    public function store(StoreContactMessageRequest $request, GetSharedSiteData $site): RedirectResponse
+    /**
+     * Messages go to the redaksi inbox, not the public contact email shown on the site.
+     */
+    public function store(StoreContactMessageRequest $request): RedirectResponse
     {
-        /** @var array{email?: string} $contact */
-        $contact = $site->setting('contact', []);
-
         /** @var array{name: string, email: string, subject: string, message: string} $data */
         $data = $request->validated();
 
-        Mail::to($contact['email'] ?? config('mail.from.address'))->send(new ContactMessageMail(
+        Mail::to((string) config('services.newsroom.email'))->send(new ContactMessageMail(
             $data['name'],
             $data['email'],
             $data['subject'],

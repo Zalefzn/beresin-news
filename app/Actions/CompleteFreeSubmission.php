@@ -10,7 +10,6 @@ use App\Models\Article;
 use App\Models\User;
 use App\Notifications\SubmissionNotification;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
 
 /**
@@ -19,6 +18,8 @@ use Illuminate\Support\Str;
  */
 class CompleteFreeSubmission
 {
+    public function __construct(private NotifyNewsroom $newsroom) {}
+
     public function handle(Article $article, User $user): void
     {
         DB::transaction(function () use ($article, $user): void {
@@ -39,9 +40,6 @@ class CompleteFreeSubmission
 
         $article->unsetRelation('orders');
 
-        Notification::send(
-            User::query()->where('role', 'admin')->where('is_active', true)->get(),
-            SubmissionNotification::awaitingReview($article),
-        );
+        $this->newsroom->handle(SubmissionNotification::awaitingReview($article));
     }
 }

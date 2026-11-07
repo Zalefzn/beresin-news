@@ -7,7 +7,6 @@ namespace App\Actions;
 use App\Enums\ArticleStatus;
 use App\Enums\OrderStatus;
 use App\Models\ArticleOrder;
-use App\Models\User;
 use App\Notifications\SubmissionNotification;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -18,6 +17,8 @@ use Illuminate\Support\Facades\Notification;
  */
 class ApplyMidtransStatus
 {
+    public function __construct(private NotifyNewsroom $newsroom) {}
+
     /**
      * @param  array<string, mixed>  $payload
      */
@@ -100,6 +101,6 @@ class ApplyMidtransStatus
 
     private function notifyAdmins(ArticleOrder $order, SubmissionNotification $notification): void
     {
-        Notification::send(User::query()->where('role', 'admin')->where('is_active', true)->get(), $notification);
+        $this->newsroom->handle($notification);
     }
 }

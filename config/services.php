@@ -14,6 +14,13 @@ return [
     |
     */
 
+    /*
+     * The redaksi inbox that receives contact form messages and admin alerts.
+     */
+    'newsroom' => [
+        'email' => env('NEWSROOM_EMAIL', 'officialberesin@gmail.com'),
+    ],
+
     'midtrans' => [
         'server_key' => env('MIDTRANS_SERVER_KEY', ''),
         'is_production' => (bool) env('MIDTRANS_IS_PRODUCTION', false),

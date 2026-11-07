@@ -9,6 +9,7 @@ use App\Actions\CompleteFreeSubmission;
 use App\Actions\GenerateArticleSlug;
 use App\Actions\GetSharedSiteData;
 use App\Actions\MidtransGateway;
+use App\Actions\NotifyNewsroom;
 use App\Actions\SanitizeHtml;
 use App\Actions\StartArticlePayment;
 use App\Enums\ArticlePackage;
@@ -25,7 +26,6 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -137,7 +137,7 @@ class SubmissionController extends Controller
     /**
      * A rejected article was already paid for, so revising it costs nothing more.
      */
-    public function resubmit(Article $article): RedirectResponse
+    public function resubmit(Article $article, NotifyNewsroom $newsroom): RedirectResponse
     {
         Gate::authorize('updateSubmission', $article);
 
@@ -149,10 +149,7 @@ class SubmissionController extends Controller
 
         $article->update(['status' => ArticleStatus::Review, 'rejection_reason' => null]);
 
-        Notification::send(
-            User::query()->where('role', 'admin')->where('is_active', true)->get(),
-            SubmissionNotification::awaitingReview($article),
-        );
+        $newsroom->handle(SubmissionNotification::awaitingReview($article));
 
         Inertia::flash('success', 'Naskah diajukan kembali dan menunggu tinjauan admin.');
 
