@@ -30,7 +30,8 @@ class DashboardController extends Controller
 
     private const int LATEST_USERS = 10;
 
-    private const int NEW_USER_DAYS = 7;
+    /** Users who joined within this many hours carry the "Baru" badge. */
+    private const int NEW_USER_HOURS = 24;
 
     private const int POPULAR_LIMIT = 10;
 
@@ -104,7 +105,7 @@ class DashboardController extends Controller
     {
         return [
             $this->tile('Artikel terbit hari ini', $this->publishedToday(), 'fa-newspaper', 'Lihat artikel', route('admin.articles.index', ['status' => 'published'])),
-            $this->tile('Kunjungan 24 jam', $this->views24h(), 'fa-users-viewfinder', 'Lihat per artikel', popup: 'popular'),
+            $this->tile('Total kunjungan', $this->totalViews(), 'fa-users-viewfinder', 'Lihat per artikel', popup: 'popular'),
             $this->tile('Naskah menunggu tinjauan', Article::query()->where('status', ArticleStatus::Review)->count(), 'fa-clipboard-check', 'Tinjau naskah', route('admin.reviews.index')),
             $this->tile('Komentar menunggu', $this->pendingComments(), 'fa-comments', 'Moderasi', route('admin.comments.index', ['status' => 'pending'])),
             $this->tile('Pelanggan newsletter', NewsletterSubscriber::query()->active()->count(), 'fa-envelope', 'Lihat pelanggan', route('admin.newsletter.index', ['status' => 'aktif'])),
@@ -117,7 +118,7 @@ class DashboardController extends Controller
     {
         return [
             $this->tile('Artikel terbit hari ini', $this->publishedToday(), 'fa-newspaper', 'Lihat artikel', route('admin.articles.index', ['status' => 'published'])),
-            $this->tile('Kunjungan 24 jam', $this->views24h(), 'fa-users-viewfinder', 'Lihat per artikel', popup: 'popular'),
+            $this->tile('Total kunjungan', $this->totalViews(), 'fa-users-viewfinder', 'Lihat per artikel', popup: 'popular'),
             $this->tile('Artikel menunggu review', Article::query()->where('status', ArticleStatus::Review)->count(), 'fa-hourglass-half', 'Lihat antrean', route('admin.articles.index', ['status' => 'review'])),
             $this->tile('Draf redaksi', Article::query()->where('status', ArticleStatus::Draft)->whereNull('package')->count(), 'fa-pencil', 'Lihat draf', route('admin.articles.index', ['status' => 'draft'])),
             $this->tile('Komentar menunggu', $this->pendingComments(), 'fa-comments', 'Moderasi', route('admin.comments.index', ['status' => 'pending'])),
@@ -133,8 +134,8 @@ class DashboardController extends Controller
 
         return [
             $this->tile('Artikel saya terbit', $own()->published()->count(), 'fa-newspaper', 'Lihat artikel', route('admin.articles.index', ['status' => 'published'])),
-            $this->tile('Kunjungan artikel saya 24 jam', $this->views24h($writer->id), 'fa-users-viewfinder', 'Lihat per artikel', popup: 'popular'),
-            $this->tile('Total kunjungan artikel saya', (int) $own()->sum('views_count'), 'fa-chart-line', 'Lihat semua', route('admin.articles.index')),
+            $this->tile('Total kunjungan artikel saya', $this->totalViews($writer->id), 'fa-users-viewfinder', 'Lihat per artikel', popup: 'popular'),
+            $this->tile('Suka di artikel saya', (int) $own()->sum('likes_count'), 'fa-heart', 'Lihat artikel', route('admin.articles.index', ['status' => 'published'])),
             $this->tile('Draf saya', $countByStatus(ArticleStatus::Draft), 'fa-pencil', 'Lanjutkan menulis', route('admin.articles.index', ['status' => 'draft'])),
             $this->tile('Menunggu review', $countByStatus(ArticleStatus::Review), 'fa-hourglass-half', 'Lihat status', route('admin.articles.index', ['status' => 'review'])),
             $this->tile('Perlu revisi', $countByStatus(ArticleStatus::Rejected), 'fa-rotate-left', 'Perbaiki', route('admin.articles.index', ['status' => 'rejected'])),
@@ -172,9 +173,11 @@ class DashboardController extends Controller
         return Comment::query()->where('status', CommentStatus::Pending)->count();
     }
 
-    private function views24h(?int $authorId = null): int
+    private function totalViews(?int $authorId = null): int
     {
-        return $this->viewsQuery($authorId)->where('viewed_at', '>=', now()->subDay())->count();
+        return (int) Article::query()
+            ->when($authorId, fn (Builder $query) => $query->where('author_id', $authorId))
+            ->sum('views_count');
     }
 
     /** @return Builder<ArticleView> */
@@ -187,9 +190,9 @@ class DashboardController extends Controller
     }
 
     /**
-     * Ranked by visits in the last 24 hours, with the all-time count alongside.
+     * Published articles ranked by all-time visits.
      *
-     * @return Collection<int, array{id: int, title: string, url: string, category: string, views_24h: int, views_total: int}>
+     * @return Collection<int, array{id: int, title: string, url: string, category: string, views_total: int}>
      */
     private function popular(?int $authorId): Collection
     {
@@ -197,7 +200,8 @@ class DashboardController extends Controller
             ->published()
             ->with('category')
             ->when($authorId, fn (Builder $query) => $query->where('author_id', $authorId))
-            ->popularSince(now()->subDay())
+            ->orderByDesc('views_count')
+            ->latest('published_at')
             ->limit(self::POPULAR_LIMIT)
             ->get()
             ->map(fn (Article $article): array => [
@@ -205,7 +209,6 @@ class DashboardController extends Controller
                 'title' => $article->title,
                 'url' => $article->url(absolute: false),
                 'category' => $article->category->name,
-                'views_24h' => (int) $article->getAttribute('recent_views_count'),
                 'views_total' => $article->views_count,
             ])
             ->toBase();
@@ -227,7 +230,7 @@ class DashboardController extends Controller
                 'email' => $user->email,
                 'role_label' => $user->role->label(),
                 'is_active' => $user->is_active,
-                'is_new' => $user->created_at?->gte(now()->subDays(self::NEW_USER_DAYS)) ?? false,
+                'is_new' => $user->created_at?->gte(now()->subHours(self::NEW_USER_HOURS)) ?? false,
                 'joined' => $user->created_at?->diffForHumans(),
                 'joined_at' => $user->created_at?->toIso8601String(),
             ]);

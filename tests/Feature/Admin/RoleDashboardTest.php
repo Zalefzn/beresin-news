@@ -39,17 +39,19 @@ test('editors see the newsroom work queue without admin-only menus', function ()
         });
 });
 
-test('the visits popup separates the last 24 hours from all-time views', function () {
-    $article = Article::factory()->create(['views_count' => 3]);
-    ArticleView::query()->create(['article_id' => $article->id, 'session_hash' => 'baru', 'viewed_at' => now()->subHour()]);
-    ArticleView::query()->create(['article_id' => $article->id, 'session_hash' => 'lama-1', 'viewed_at' => now()->subDays(2)]);
-    ArticleView::query()->create(['article_id' => $article->id, 'session_hash' => 'lama-2', 'viewed_at' => now()->subDays(3)]);
+test('the visits popup ranks published articles by total views', function () {
+    Article::factory()->create(['title' => 'Sedikit', 'views_count' => 3]);
+    Article::factory()->create(['title' => 'Banyak', 'views_count' => 50]);
+    Article::factory()->draft()->create(['title' => 'Draf', 'views_count' => 900]);
 
     $this->actingAs(User::factory()->admin()->create())->get(route('admin.dashboard'))
         ->assertInertia(fn (Assert $page) => $page
-            ->where('popular.0.views_24h', 1)
-            ->where('popular.0.views_total', 3)
-            ->where('tiles.1.value', 1));
+            ->has('popular', 2)
+            ->where('popular.0.title', 'Banyak')
+            ->where('popular.0.views_total', 50)
+            ->missing('popular.0.views_24h')
+            ->where('tiles.1.label', 'Total kunjungan')
+            ->where('tiles.1.value', 953));
 });
 
 test('writers only see numbers about their own articles', function () {
@@ -70,14 +72,13 @@ test('writers only see numbers about their own articles', function () {
                 ->where('latestUsers', null)
                 ->has('popular', 1)
                 ->where('popular.0.id', $mine->id)
-                ->where('popular.0.views_24h', 1)
                 ->where('popular.0.views_total', 40)
                 ->has('activity', 3);
 
             expect(tileValues($page))->toMatchArray([
                 'Artikel saya terbit' => 1,
-                'Kunjungan artikel saya 24 jam' => 1,
                 'Total kunjungan artikel saya' => 40,
+                'Suka di artikel saya' => 0,
                 'Draf saya' => 1,
                 'Perlu revisi' => 1,
             ]);

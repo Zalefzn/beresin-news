@@ -19,7 +19,6 @@ type PopularArticle = {
     title: string;
     url: string;
     category: string;
-    views_24h: number;
     views_total: number;
 };
 
@@ -136,26 +135,25 @@ function PopularDialog({
                     {title}
                 </DialogTitle>
                 <DialogDescription>
-                    Total {formatNumber(total)} kunjungan dalam 24 jam terakhir.
-                    Rincian views per artikel:
+                    Total {formatNumber(total)} kunjungan. Rincian views per
+                    artikel:
                 </DialogDescription>
                 {articles.length === 0 ? (
                     <p className="py-6 text-center text-xs text-slate-500 dark:text-slate-400">
-                        Belum ada kunjungan dalam 24 jam terakhir.
+                        Belum ada kunjungan.
                     </p>
                 ) : (
                     <div className="rounded-xl border border-slate-200 dark:border-slate-800">
-                        <div className="grid grid-cols-[2rem_1fr_5rem_5rem] gap-3 border-b border-slate-200 bg-slate-50 px-3 py-2 text-[10px] font-bold tracking-wider text-slate-500 uppercase sm:grid-cols-[2rem_1fr_7rem_7rem] dark:border-slate-800 dark:bg-slate-800/60 dark:text-slate-400">
+                        <div className="grid grid-cols-[2rem_1fr_5rem] gap-3 border-b border-slate-200 bg-slate-50 px-3 py-2 text-[10px] font-bold tracking-wider text-slate-500 uppercase sm:grid-cols-[2rem_1fr_7rem] dark:border-slate-800 dark:bg-slate-800/60 dark:text-slate-400">
                             <span>#</span>
                             <span>Artikel</span>
-                            <span className="text-right">24 Jam</span>
-                            <span className="text-right">Total Views</span>
+                            <span className="text-right">Views</span>
                         </div>
                         <ol className="divide-y divide-slate-100 dark:divide-slate-800">
                             {articles.map((article, position) => (
                                 <li
                                     key={article.id}
-                                    className="grid grid-cols-[2rem_1fr_5rem_5rem] items-center gap-3 px-3 py-3 sm:grid-cols-[2rem_1fr_7rem_7rem]"
+                                    className="grid grid-cols-[2rem_1fr_5rem] items-center gap-3 px-3 py-3 sm:grid-cols-[2rem_1fr_7rem]"
                                 >
                                     <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-slate-100 text-xs font-black text-brand-blue dark:bg-slate-800 dark:text-sky-400">
                                         {position + 1}
@@ -174,9 +172,6 @@ function PopularDialog({
                                         </p>
                                     </div>
                                     <span className="text-right text-sm font-black text-brand-blue tabular-nums dark:text-sky-400">
-                                        {formatNumber(article.views_24h)}
-                                    </span>
-                                    <span className="text-right text-xs text-slate-500 tabular-nums dark:text-slate-400">
                                         {formatNumber(article.views_total)}
                                     </span>
                                 </li>
@@ -387,14 +382,12 @@ export default function AdminDashboard({
                                     >
                                         {article.title}
                                     </Link>
-                                    <span
-                                        className="whitespace-nowrap text-slate-500 dark:text-slate-400"
-                                        title="Kunjungan 24 jam / total views"
-                                    >
-                                        <strong className="text-brand-blue dark:text-sky-400">
-                                            {formatNumber(article.views_24h)}
-                                        </strong>{' '}
-                                        / {formatNumber(article.views_total)}
+                                    <span className="whitespace-nowrap text-slate-500 dark:text-slate-400">
+                                        <i
+                                            className="fa-solid fa-eye mr-1"
+                                            aria-hidden="true"
+                                        />
+                                        {formatNumber(article.views_total)}
                                     </span>
                                 </li>
                             ))}

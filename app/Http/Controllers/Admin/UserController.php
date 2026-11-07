@@ -43,7 +43,7 @@ class UserController extends Controller
                     'job_title' => $user->job_title,
                     'bio' => $user->bio,
                     'is_active' => $user->is_active,
-                    'is_new' => $user->created_at?->gte(now()->subDays(7)) ?? false,
+                    'is_new' => $user->created_at?->gte(now()->subDay()) ?? false,
                     'joined' => $user->created_at?->translatedFormat('j M Y, H:i'),
                     'joined_relative' => $user->created_at?->diffForHumans(),
                 ]),

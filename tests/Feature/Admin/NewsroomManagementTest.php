@@ -137,7 +137,7 @@ test('admins manage users but cannot lock themselves out', function () {
 
 test('only admins see the latest users on the dashboard, newest first', function () {
     $admin = User::factory()->admin()->create(['created_at' => now()->subMonth()]);
-    User::factory()->create(['name' => 'Pembaca Lama', 'created_at' => now()->subWeeks(2)]);
+    User::factory()->create(['name' => 'Pembaca Lama', 'created_at' => now()->subHours(25)]);
     User::factory()->create(['name' => 'Pembaca Baru', 'created_at' => now()->subHour()]);
 
     $this->actingAs($admin)->get(route('admin.dashboard'))
