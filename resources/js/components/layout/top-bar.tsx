@@ -61,7 +61,14 @@ export default function TopBar({ onOpenSaved }: { onOpenSaved: () => void }) {
                     >
                         |
                     </span>
-                    <div className="hidden items-center gap-1.5 sm:flex">
+                    <div
+                        className="hidden items-center gap-1.5 sm:flex"
+                        title={
+                            site.weatherSource
+                                ? `Suhu terkini, sumber: ${site.weatherSource}`
+                                : undefined
+                        }
+                    >
                         <i
                             className="fa-solid fa-cloud-sun text-amber-400"
                             aria-hidden="true"

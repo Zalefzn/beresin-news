@@ -53,15 +53,20 @@ class HandleInertiaRequests extends Middleware
             'navCategories' => fn (): array => $site->categories(),
             'trendingTags' => fn (): array => $site->trendingTags(),
             'breakingNews' => fn (): array => $site->breakingNews(),
-            'site' => fn (): array => [
-                'name' => $site->setting('site_name'),
-                'weatherCity' => $site->setting('weather_city'),
-                'weatherTemp' => $site->setting('weather_temp'),
-                'social' => $site->setting('social'),
-                'contact' => $site->setting('contact'),
-                'footerText' => $site->setting('footer_text'),
-                'analyticsCode' => $site->setting('analytics_code'),
-            ],
+            'site' => function () use ($site): array {
+                $weather = $site->weather();
+
+                return [
+                    'name' => $site->setting('site_name'),
+                    'weatherCity' => $site->setting('weather_city'),
+                    'weatherTemp' => $weather['temperature'],
+                    'weatherSource' => $weather['source'],
+                    'social' => $site->setting('social'),
+                    'contact' => $site->setting('contact'),
+                    'footerText' => $site->setting('footer_text'),
+                    'analyticsCode' => $site->setting('analytics_code'),
+                ];
+            },
             'unreadNotifications' => fn (): int => $user?->unreadNotifications()->count() ?? 0,
             'savedIds' => fn (): array => $user
                 ? $user->bookmarkedArticles()->pluck('articles.id')->all()

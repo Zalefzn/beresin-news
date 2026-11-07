@@ -141,6 +141,20 @@ export default function SiteFooter() {
                     <p>
                         &copy; {new Date().getFullYear()} {site.name}. Hak Cipta
                         Dilindungi Undang-Undang.
+                        {site.weatherSource && (
+                            <span className="block sm:ml-1 sm:inline">
+                                Data cuaca:{' '}
+                                <a
+                                    href="https://api.met.no/"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="hover:underline"
+                                >
+                                    {site.weatherSource}
+                                </a>{' '}
+                                (CC BY 4.0).
+                            </span>
+                        )}
                     </p>
                     <div className="flex gap-4">
                         <Link

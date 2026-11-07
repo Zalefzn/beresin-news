@@ -29,6 +29,7 @@ class GetSharedSiteData
         'site_name' => 'BeresinNews',
         'weather_city' => 'Jakarta',
         'weather_temp' => '29°C',
+        'weather_auto' => true,
         'social' => [],
         'contact' => ['address' => '', 'email' => '', 'phone' => ''],
         'footer_text' => '',
@@ -37,6 +38,25 @@ class GetSharedSiteData
         'price_general' => 30000,
         'price_branding' => 50000,
     ];
+
+    public function __construct(private GetCurrentWeather $weather) {}
+
+    /**
+     * The live temperature for the configured city when automatic weather is on,
+     * otherwise (or when the weather service is unavailable) the temperature typed in settings.
+     *
+     * @return array{temperature: string, source: string|null}
+     */
+    public function weather(): array
+    {
+        $isAutomatic = (bool) config('services.weather.enabled') && (bool) $this->setting('weather_auto', true);
+        $live = $isAutomatic ? $this->weather->temperature((string) $this->setting('weather_city')) : null;
+
+        return [
+            'temperature' => $live ?? (string) $this->setting('weather_temp'),
+            'source' => $live === null ? null : GetCurrentWeather::SOURCE,
+        ];
+    }
 
     public static function flush(): void
     {

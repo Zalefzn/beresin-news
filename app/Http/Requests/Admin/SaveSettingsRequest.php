@@ -22,6 +22,7 @@ class SaveSettingsRequest extends FormRequest
             'site_name' => ['required', 'string', 'max:100'],
             'weather_city' => ['required', 'string', 'max:60'],
             'weather_temp' => ['required', 'string', 'max:10'],
+            'weather_auto' => ['sometimes', 'boolean'],
             'social' => ['array'],
             'social.instagram' => ['nullable', 'url:https,http'],
             'social.tiktok' => ['nullable', 'url:https,http'],

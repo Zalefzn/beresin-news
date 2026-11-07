@@ -21,6 +21,13 @@ return [
         'email' => env('NEWSROOM_EMAIL', 'officialberesin@gmail.com'),
     ],
 
+    /*
+     * Live temperature in the top bar. Tests turn it off so they never call the internet.
+     */
+    'weather' => [
+        'enabled' => (bool) env('WEATHER_AUTO', true),
+    ],
+
     'midtrans' => [
         'server_key' => env('MIDTRANS_SERVER_KEY', ''),
         'is_production' => (bool) env('MIDTRANS_IS_PRODUCTION', false),

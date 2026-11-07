@@ -119,6 +119,8 @@ export type SiteSettings = {
     name: string;
     weatherCity: string;
     weatherTemp: string;
+    /** Set when the temperature is live; null when it is the value typed in settings. */
+    weatherSource: string | null;
     social: Partial<Record<'instagram' | 'tiktok', string>>;
     contact: { address?: string; email?: string; phone?: string };
     footerText: string;

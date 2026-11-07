@@ -1,7 +1,7 @@
 import { useForm } from '@inertiajs/react';
 import type { FormEvent, InputHTMLAttributes, ReactNode } from 'react';
 import AdminHeader from '@/components/admin/admin-header';
-import Field from '@/components/admin/field';
+import Field, { SwitchField } from '@/components/admin/field';
 import { card, primaryButton, secondaryButton, textInput } from '@/lib/ui';
 import { cn } from '@/lib/utils';
 import { update } from '@/routes/admin/settings';
@@ -10,6 +10,7 @@ type Settings = {
     site_name: string;
     weather_city: string;
     weather_temp: string;
+    weather_auto: boolean;
     social: {
         instagram?: string;
         tiktok?: string;
@@ -142,6 +143,7 @@ export default function AdminSettingsIndex({
         site_name: settings.site_name ?? '',
         weather_city: settings.weather_city ?? '',
         weather_temp: settings.weather_temp ?? '',
+        weather_auto: settings.weather_auto ?? true,
         social: {
             instagram: settings.social?.instagram ?? '',
             tiktok: settings.social?.tiktok ?? '',
@@ -239,12 +241,28 @@ export default function AdminSettingsIndex({
                                 className={textInput}
                             />
                         </Field>
+                        <div className="md:col-span-2">
+                            <SwitchField
+                                id="weather_auto"
+                                label="Suhu otomatis"
+                                description="Ambil suhu terkini kota di atas dari MET Norway, diperbarui tiap 30 menit."
+                                icon="fa-cloud-sun"
+                                checked={data.weather_auto}
+                                onChange={(checked) =>
+                                    setData('weather_auto', checked)
+                                }
+                            />
+                        </div>
                         <Field
                             id="weather_temp"
-                            label="Suhu"
+                            label={data.weather_auto ? 'Suhu Cadangan' : 'Suhu'}
                             icon="fa-temperature-half"
                             error={errors.weather_temp}
-                            hint="Contoh: 29°C"
+                            hint={
+                                data.weather_auto
+                                    ? 'Dipakai bila data cuaca otomatis sedang tidak tersedia. Contoh: 29°C'
+                                    : 'Contoh: 29°C'
+                            }
                             required
                         >
                             <input
