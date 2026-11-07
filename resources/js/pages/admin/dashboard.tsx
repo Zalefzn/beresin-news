@@ -1,4 +1,4 @@
-import { Link } from '@inertiajs/react';
+import { Link, usePoll } from '@inertiajs/react';
 import { useState } from 'react';
 import AdminHeader from '@/components/admin/admin-header';
 import UserStatusBadge from '@/components/admin/user-status-badge';
@@ -66,6 +66,19 @@ type DashboardProps = {
         edit_url: string | null;
     }[];
 };
+
+const LIVE_REFRESH_MS = 30_000;
+
+const clockFormat = new Intl.DateTimeFormat('id-ID', {
+    timeZone: 'Asia/Jakarta',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+});
+
+function formatClock(date: Date): string {
+    return `${clockFormat.format(date).replaceAll('.', ':')} WIB`;
+}
 
 const ROLE_BADGE: Record<DashboardProps['role'], string> = {
     admin: 'Admin',
@@ -250,7 +263,14 @@ export default function AdminDashboard({
     activity,
 }: DashboardProps) {
     const [popup, setPopup] = useState<Tile['popup']>(null);
+    const [updatedAt, setUpdatedAt] = useState<string | null>(null);
     const viewsTile = tiles.find((tile) => tile.popup === 'popular');
+
+    // Reloads only the live numbers; polling pauses while the tab is in the background.
+    usePoll(LIVE_REFRESH_MS, {
+        only: ['tiles', 'popular', 'activity', 'latestUsers', 'viewsChart'],
+        onSuccess: () => setUpdatedAt(formatClock(new Date())),
+    });
 
     return (
         <>
@@ -259,13 +279,30 @@ export default function AdminDashboard({
                 icon="fa-gauge-high"
                 description={heading.description}
                 actions={
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-blue/10 px-3 py-1.5 text-[11px] font-bold text-brand-blue dark:bg-sky-400/10 dark:text-sky-400">
-                        <i
-                            className="fa-solid fa-id-badge"
-                            aria-hidden="true"
-                        />
-                        Masuk sebagai {ROLE_BADGE[role]}
-                    </span>
+                    <>
+                        <span
+                            className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1.5 text-[11px] font-bold text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400"
+                            title="Angka diperbarui otomatis tiap 30 detik"
+                        >
+                            <span
+                                className="live-dot h-2 w-2 rounded-full bg-emerald-500"
+                                aria-hidden="true"
+                            />
+                            Langsung
+                            {updatedAt && (
+                                <span className="font-medium">
+                                    · {updatedAt}
+                                </span>
+                            )}
+                        </span>
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-blue/10 px-3 py-1.5 text-[11px] font-bold text-brand-blue dark:bg-sky-400/10 dark:text-sky-400">
+                            <i
+                                className="fa-solid fa-id-badge"
+                                aria-hidden="true"
+                            />
+                            Masuk sebagai {ROLE_BADGE[role]}
+                        </span>
+                    </>
                 }
             />
 

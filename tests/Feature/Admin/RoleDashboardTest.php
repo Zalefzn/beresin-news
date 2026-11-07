@@ -39,6 +39,19 @@ test('editors see the newsroom work queue without admin-only menus', function ()
         });
 });
 
+test('the visits popup separates the last 24 hours from all-time views', function () {
+    $article = Article::factory()->create(['views_count' => 3]);
+    ArticleView::query()->create(['article_id' => $article->id, 'session_hash' => 'baru', 'viewed_at' => now()->subHour()]);
+    ArticleView::query()->create(['article_id' => $article->id, 'session_hash' => 'lama-1', 'viewed_at' => now()->subDays(2)]);
+    ArticleView::query()->create(['article_id' => $article->id, 'session_hash' => 'lama-2', 'viewed_at' => now()->subDays(3)]);
+
+    $this->actingAs(User::factory()->admin()->create())->get(route('admin.dashboard'))
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('popular.0.views_24h', 1)
+            ->where('popular.0.views_total', 3)
+            ->where('tiles.1.value', 1));
+});
+
 test('writers only see numbers about their own articles', function () {
     $writer = User::factory()->writer()->create();
     $mine = Article::factory()->create(['author_id' => $writer->id, 'views_count' => 40]);
