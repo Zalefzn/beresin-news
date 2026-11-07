@@ -1,4 +1,4 @@
-import { Link, usePage } from '@inertiajs/react';
+import { Link } from '@inertiajs/react';
 import { useState } from 'react';
 import AdminHeader from '@/components/admin/admin-header';
 import UserStatusBadge from '@/components/admin/user-status-badge';
@@ -13,9 +13,6 @@ import {
 import { formatNumber } from '@/lib/format';
 import { card, secondaryButton } from '@/lib/ui';
 import { index as articlesIndex } from '@/routes/admin/articles';
-import { index as commentsIndex } from '@/routes/admin/comments';
-import { index as newsletterIndex } from '@/routes/admin/newsletter';
-import { index as reviewsIndex } from '@/routes/admin/reviews';
 import { index as usersIndex } from '@/routes/admin/users';
 import type { ArticleCard } from '@/types';
 
@@ -30,15 +27,26 @@ type LatestUser = {
     joined_at: string | null;
 };
 
+type Tile = {
+    label: string;
+    value: number;
+    icon: string;
+    /** Short call to action under the number. */
+    action: string;
+    href: string | null;
+    popup: 'popular' | 'users' | null;
+};
+
 type DashboardProps = {
-    stats: {
-        publishedToday: number;
-        views24h: number;
-        pendingComments: number;
-        subscribers: number;
-        pendingReviews: number;
-        users: number;
+    role: 'admin' | 'editor' | 'writer';
+    heading: {
+        title: string;
+        description: string;
+        popularTitle: string;
+        activityTitle: string;
+        chartTitle: string;
     };
+    tiles: Tile[];
     latestUsers: LatestUser[] | null;
     viewsChart?: ChartPoint[];
     popular: ArticleCard[];
@@ -48,17 +56,14 @@ type DashboardProps = {
         author: string;
         status: string;
         time: string | null;
+        edit_url: string | null;
     }[];
 };
 
-type Tile = {
-    label: string;
-    value: number;
-    icon: string;
-    /** Short call to action under the number. */
-    action: string;
-    href?: string;
-    onClick?: () => void;
+const ROLE_BADGE: Record<DashboardProps['role'], string> = {
+    admin: 'Admin',
+    editor: 'Redaktur',
+    writer: 'Jurnalis',
 };
 
 const tileClass = `${card} group block p-4 text-left transition hover:-translate-y-0.5 hover:border-brand-blue hover:shadow-md focus-visible:ring-2 focus-visible:ring-brand-blue focus-visible:outline-none`;
@@ -76,7 +81,7 @@ function TileContent({ tile }: { tile: Tile }) {
             <p className="text-xs text-slate-500 dark:text-slate-400">
                 {tile.label}
             </p>
-            {(tile.href || tile.onClick) && (
+            {(tile.href || tile.popup) && (
                 <span className="mt-2 flex items-center gap-1 text-[10px] font-bold text-brand-blue dark:text-sky-400">
                     {tile.action}
                     <i
@@ -90,10 +95,12 @@ function TileContent({ tile }: { tile: Tile }) {
 }
 
 function PopularDialog({
+    title,
     articles,
     total,
     onClose,
 }: {
+    title: string;
     articles: ArticleCard[];
     total: number;
     onClose: () => void;
@@ -101,7 +108,7 @@ function PopularDialog({
     return (
         <Dialog open onOpenChange={(open) => !open && onClose()}>
             <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
-                <DialogTitle>Views 24 Jam Terakhir</DialogTitle>
+                <DialogTitle>{title}</DialogTitle>
                 <DialogDescription>
                     {formatNumber(total)} kunjungan. Artikel paling banyak
                     dibaca:
@@ -209,74 +216,32 @@ function LatestUsersDialog({
 }
 
 export default function AdminDashboard({
-    stats,
+    role,
+    heading,
+    tiles,
     latestUsers,
     viewsChart,
     popular,
     activity,
 }: DashboardProps) {
-    const [showUsers, setShowUsers] = useState(false);
-    const [showPopular, setShowPopular] = useState(false);
-    const viewer = usePage().props.auth.user;
-    const isAdmin = viewer?.is_admin ?? false;
-    const canManage = viewer?.can_manage_newsroom ?? false;
-
-    // Each tile leads to its menu; tiles for menus the viewer cannot open stay static.
-    const tiles: Tile[] = [
-        {
-            label: 'Artikel terbit hari ini',
-            value: stats.publishedToday,
-            icon: 'fa-newspaper',
-            action: 'Lihat artikel',
-            href: articlesIndex.url({ query: { status: 'published' } }),
-        },
-        {
-            label: 'Total views 24 jam',
-            value: stats.views24h,
-            icon: 'fa-eye',
-            action: 'Lihat terpopuler',
-            onClick: () => setShowPopular(true),
-        },
-        {
-            label: 'Naskah menunggu tinjauan',
-            value: stats.pendingReviews,
-            icon: 'fa-clipboard-check',
-            action: 'Tinjau naskah',
-            href: isAdmin ? reviewsIndex.url() : undefined,
-        },
-        {
-            label: 'Komentar menunggu',
-            value: stats.pendingComments,
-            icon: 'fa-comments',
-            action: 'Moderasi',
-            href: canManage
-                ? commentsIndex.url({ query: { status: 'pending' } })
-                : undefined,
-        },
-        {
-            label: 'Pelanggan newsletter',
-            value: stats.subscribers,
-            icon: 'fa-envelope',
-            action: 'Lihat pelanggan',
-            href: isAdmin
-                ? newsletterIndex.url({ query: { status: 'aktif' } })
-                : undefined,
-        },
-        {
-            label: 'Jumlah pengguna',
-            value: stats.users,
-            icon: 'fa-users',
-            action: 'Lihat daftar',
-            onClick: latestUsers ? () => setShowUsers(true) : undefined,
-        },
-    ];
+    const [popup, setPopup] = useState<Tile['popup']>(null);
+    const viewsTile = tiles.find((tile) => tile.popup === 'popular');
 
     return (
         <>
             <AdminHeader
-                title="Dashboard"
+                title={heading.title}
                 icon="fa-gauge-high"
-                description="Ringkasan aktivitas redaksi."
+                description={heading.description}
+                actions={
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-blue/10 px-3 py-1.5 text-[11px] font-bold text-brand-blue dark:bg-sky-400/10 dark:text-sky-400">
+                        <i
+                            className="fa-solid fa-id-badge"
+                            aria-hidden="true"
+                        />
+                        Masuk sebagai {ROLE_BADGE[role]}
+                    </span>
+                }
             />
 
             <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-6">
@@ -289,11 +254,12 @@ export default function AdminDashboard({
                         >
                             <TileContent tile={tile} />
                         </Link>
-                    ) : tile.onClick ? (
+                    ) : tile.popup &&
+                      (tile.popup !== 'users' || latestUsers) ? (
                         <button
                             key={tile.label}
                             type="button"
-                            onClick={tile.onClick}
+                            onClick={() => setPopup(tile.popup)}
                             aria-haspopup="dialog"
                             className={tileClass}
                         >
@@ -307,24 +273,25 @@ export default function AdminDashboard({
                 )}
             </div>
 
-            {showPopular && (
+            {popup === 'popular' && (
                 <PopularDialog
+                    title={viewsTile?.label ?? heading.popularTitle}
                     articles={popular}
-                    total={stats.views24h}
-                    onClose={() => setShowPopular(false)}
+                    total={viewsTile?.value ?? 0}
+                    onClose={() => setPopup(null)}
                 />
             )}
 
-            {showUsers && latestUsers && (
+            {popup === 'users' && latestUsers && (
                 <LatestUsersDialog
                     users={latestUsers}
-                    onClose={() => setShowUsers(false)}
+                    onClose={() => setPopup(null)}
                 />
             )}
 
             <section className={`${card} p-5`}>
                 <h2 className="mb-3 text-sm font-extrabold text-slate-900 dark:text-white">
-                    Tayangan 30 Hari Terakhir
+                    {heading.chartTitle}
                 </h2>
                 {viewsChart ? (
                     <ViewsChart points={viewsChart} />
@@ -336,46 +303,69 @@ export default function AdminDashboard({
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
                 <section className={`${card} p-5`}>
                     <h2 className="mb-3 text-sm font-extrabold text-slate-900 dark:text-white">
-                        5 Artikel Terpopuler
+                        {heading.popularTitle}
                     </h2>
-                    <ol className="space-y-3">
-                        {popular.map((article, index) => (
-                            <li
-                                key={article.id}
-                                className="flex items-center gap-3 text-xs"
-                            >
-                                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-100 font-black text-brand-blue dark:bg-slate-800">
-                                    {index + 1}
-                                </span>
-                                <Link
-                                    href={article.url}
-                                    className="min-w-0 flex-1 truncate font-bold text-slate-800 hover:text-brand-blue dark:text-slate-200"
+                    {popular.length === 0 ? (
+                        <p className="py-6 text-center text-xs text-slate-500 dark:text-slate-400">
+                            Belum ada artikel terbit yang dibaca.
+                        </p>
+                    ) : (
+                        <ol className="space-y-3">
+                            {popular.map((article, index) => (
+                                <li
+                                    key={article.id}
+                                    className="flex items-center gap-3 text-xs"
                                 >
-                                    {article.title}
-                                </Link>
-                                <span className="text-slate-500 dark:text-slate-400">
-                                    {formatNumber(article.views_count)}
-                                </span>
-                            </li>
-                        ))}
-                    </ol>
+                                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-100 font-black text-brand-blue dark:bg-slate-800">
+                                        {index + 1}
+                                    </span>
+                                    <Link
+                                        href={article.url}
+                                        className="min-w-0 flex-1 truncate font-bold text-slate-800 hover:text-brand-blue dark:text-slate-200"
+                                    >
+                                        {article.title}
+                                    </Link>
+                                    <span className="text-slate-500 dark:text-slate-400">
+                                        {formatNumber(article.views_count)}
+                                    </span>
+                                </li>
+                            ))}
+                        </ol>
+                    )}
                 </section>
                 <section className={`${card} p-5`}>
                     <h2 className="mb-3 text-sm font-extrabold text-slate-900 dark:text-white">
-                        Aktivitas Terbaru
+                        {heading.activityTitle}
                     </h2>
-                    <ul className="space-y-3">
-                        {activity.map((item) => (
-                            <li key={item.id} className="text-xs">
-                                <p className="truncate font-bold text-slate-800 dark:text-slate-200">
-                                    {item.title}
-                                </p>
-                                <p className="text-slate-500 dark:text-slate-400">
-                                    {item.author} • {item.status} • {item.time}
-                                </p>
-                            </li>
-                        ))}
-                    </ul>
+                    {activity.length === 0 ? (
+                        <p className="py-6 text-center text-xs text-slate-500 dark:text-slate-400">
+                            Belum ada aktivitas.
+                        </p>
+                    ) : (
+                        <ul className="space-y-3">
+                            {activity.map((item) => (
+                                <li key={item.id} className="text-xs">
+                                    {item.edit_url ? (
+                                        <Link
+                                            href={item.edit_url}
+                                            className="block truncate font-bold text-slate-800 hover:text-brand-blue dark:text-slate-200"
+                                        >
+                                            {item.title}
+                                        </Link>
+                                    ) : (
+                                        <p className="truncate font-bold text-slate-800 dark:text-slate-200">
+                                            {item.title}
+                                        </p>
+                                    )}
+                                    <p className="text-slate-500 dark:text-slate-400">
+                                        {role !== 'writer' &&
+                                            `${item.author} • `}
+                                        {item.status} • {item.time}
+                                    </p>
+                                </li>
+                            ))}
+                        </ul>
+                    )}
                 </section>
             </div>
         </>

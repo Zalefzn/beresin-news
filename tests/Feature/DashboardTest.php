@@ -35,7 +35,8 @@ test('the admin dashboard shows the number of users', function () {
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('admin/dashboard')
-            ->where('stats.users', 3));
+            ->where('tiles.5.label', 'Jumlah pengguna')
+            ->where('tiles.5.value', 3));
 });
 
 test('users can log out', function () {
