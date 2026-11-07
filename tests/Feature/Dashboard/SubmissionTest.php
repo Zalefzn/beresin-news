@@ -366,3 +366,15 @@ test('notifications are private and opening one marks it read', function () {
     $this->actingAs($user)->get(route('notifications.open', $notification->id))->assertRedirect(route('submissions.index'));
     expect($notification->fresh()->read_at)->not->toBeNull();
 });
+
+test('a live payment asks midtrans to also notify this site without replacing the shared url', function () {
+    fakeSnap();
+    $user = User::factory()->create();
+    $article = Article::factory()->draft()->create(['author_id' => $user->id, 'package' => ArticlePackage::General]);
+
+    $this->actingAs($user)->post('https://beresinnews.com'.route('submissions.pay', $article, absolute: false));
+
+    Http::assertSent(fn ($request) => str_contains($request->url(), 'snap/v1/transactions')
+        && $request->header('X-Append-Notification') === ['https://beresinnews.com/midtrans/notifikasi']
+        && ! $request->hasHeader('X-Override-Notification'));
+});

@@ -1,10 +1,11 @@
 import { Link, usePage } from '@inertiajs/react';
-import { Bell, ExternalLink } from 'lucide-react';
+import { Bell, ExternalLink, LogOut } from 'lucide-react';
 import type { PropsWithChildren } from 'react';
 import AdminSidebarNav from '@/components/admin/admin-sidebar-nav';
 import { AppContent } from '@/components/app-content';
 import { AppShell } from '@/components/app-shell';
 import Logo from '@/components/layout/logo';
+import LogoutButton from '@/components/layout/logout-button';
 import { NavUser } from '@/components/nav-user';
 import {
     Sidebar,
@@ -75,6 +76,10 @@ export default function AdminLayout({ children }: PropsWithChildren) {
                             </span>
                         )}
                     </Link>
+                    <LogoutButton className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-bold text-slate-500 transition hover:bg-rose-50 hover:text-rose-600 focus-visible:ring-2 focus-visible:ring-brand-blue focus-visible:outline-none dark:text-slate-300 dark:hover:bg-rose-950 dark:hover:text-rose-400">
+                        <LogOut className="size-4" />
+                        <span className="hidden sm:inline">Keluar</span>
+                    </LogoutButton>
                 </header>
                 <div className="space-y-6 p-4 md:p-6">{children}</div>
             </AppContent>

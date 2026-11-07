@@ -192,9 +192,9 @@ class Article extends Model implements HasMedia
             : $this->orders()->where('status', OrderStatus::Paid)->exists();
     }
 
-    public function url(): string
+    public function url(bool $absolute = true): string
     {
-        return route('articles.show', ['category' => $this->category->slug, 'article' => $this->slug]);
+        return route('articles.show', ['category' => $this->category->slug, 'article' => $this->slug], $absolute);
     }
 
     public function registerMediaCollections(): void

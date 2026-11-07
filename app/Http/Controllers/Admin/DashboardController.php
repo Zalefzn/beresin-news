@@ -13,6 +13,7 @@ use App\Models\Article;
 use App\Models\ArticleView;
 use App\Models\Comment;
 use App\Models\NewsletterSubscriber;
+use App\Models\User;
 use Illuminate\Support\Collection;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -30,6 +31,7 @@ class DashboardController extends Controller
                 'pendingComments' => Comment::query()->where('status', CommentStatus::Pending)->count(),
                 'subscribers' => NewsletterSubscriber::query()->active()->count(),
                 'pendingReviews' => Article::query()->where('status', ArticleStatus::Review)->count(),
+                'users' => User::query()->count(),
             ],
             'viewsChart' => Inertia::defer(fn (): array => $this->viewsChart()->all()),
             'popular' => ArticleCardResource::collection($popularArticles->handle(now()->subDay())),

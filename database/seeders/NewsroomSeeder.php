@@ -22,6 +22,18 @@ class NewsroomSeeder extends Seeder
 {
     private const string UNSPLASH = 'https://images.unsplash.com/';
 
+    /**
+     * Name, slug, color and description, in navigation order.
+     *
+     * @var list<array{string, string, string, string}>
+     */
+    public const array CATEGORIES = [
+        ['Teknologi', 'teknologi', 'bg-blue-600', 'Perkembangan teknologi digital, internet, dan inovasi.'],
+        ['Edukasi & Pendidikan', 'edukasi-pendidikan', 'bg-purple-600', 'Edukasi dan perkembangan dunia pendidikan.'],
+        ['Ekonomi', 'ekonomi', 'bg-emerald-600', 'Ekonomi, pasar, dan bisnis.'],
+        ['Sosial & Politik', 'sosial-politik', 'bg-rose-600', 'Isu sosial, kebijakan publik, dan politik.'],
+    ];
+
     private const string UNSPLASH_PARAMS = '?auto=format&fit=crop&w=1200&q=80';
 
     public function run(): void
@@ -63,22 +75,34 @@ class NewsroomSeeder extends Seeder
     /** @return array<string, Category> */
     private function seedCategories(): array
     {
-        $rows = [
-            ['Teknologi', 'teknologi', 'bg-blue-600', 'Perkembangan teknologi digital, internet, dan inovasi.'],
-            ['Edukasi & Pendidikan', 'edukasi-pendidikan', 'bg-purple-600', 'Edukasi dan perkembangan dunia pendidikan.'],
-            ['Ekonomi', 'ekonomi', 'bg-emerald-600', 'Ekonomi, pasar, dan bisnis.'],
-            ['Sosial & Politik', 'sosial-politik', 'bg-rose-600', 'Isu sosial, kebijakan publik, dan politik.'],
-        ];
-
         $categories = [];
 
-        foreach ($rows as $order => [$name, $slug, $color, $description]) {
-            $categories[$slug] = Category::query()->create([
-                'name' => $name, 'slug' => $slug, 'color' => $color, 'description' => $description, 'sort_order' => $order,
+        foreach (self::CATEGORIES as $order => [$name, $slug, $color, $description]) {
+            $categories[$slug] = Category::query()->firstOrCreate(['slug' => $slug], [
+                'name' => $name, 'color' => $color, 'description' => $description, 'sort_order' => $order,
             ]);
         }
 
         return $categories;
+    }
+
+    /**
+     * A sample account without factories (Faker is not installed in production). The password is
+     * random and never shown, so nobody can sign in with it until an admin resets it.
+     *
+     * @param  array<string, mixed>  $attributes
+     */
+    public static function sampleUser(array $attributes): User
+    {
+        $user = new User([
+            'slug' => Str::slug((string) $attributes['name']).'-'.Str::lower(Str::random(4)),
+            'email' => Str::slug((string) $attributes['name']).'.'.Str::lower(Str::random(6)).'@contoh.beresinnews.com',
+            ...$attributes,
+            'password' => Str::password(32),
+        ]);
+        $user->forceFill(['email_verified_at' => now()])->save();
+
+        return $user;
     }
 
     /** @return array<string, User> */
@@ -95,7 +119,7 @@ class NewsroomSeeder extends Seeder
 
         foreach ($rows as [$name, $jobTitle, $role, $photo]) {
             $slug = Str::slug($name);
-            $author = User::factory()->create([
+            $author = self::sampleUser([
                 'name' => $name,
                 'slug' => $slug,
                 'email' => "{$slug}@beresinnews.id",

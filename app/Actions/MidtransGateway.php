@@ -29,7 +29,14 @@ class MidtransGateway
     {
         $snapHost = $this->isProduction() ? 'https://app.midtrans.com' : 'https://app.sandbox.midtrans.com';
 
-        $response = $this->client()->post("{$snapHost}/snap/v1/transactions", [
+        // The merchant account is shared with other Beresin sites, so the dashboard notification URL
+        // belongs to them. Midtrans also notifies this URL for this transaction, without replacing theirs.
+        $notificationUrl = route('midtrans.notification');
+        $client = str_starts_with($notificationUrl, 'https://')
+            ? $this->client()->withHeaders(['X-Append-Notification' => $notificationUrl])
+            : $this->client();
+
+        $response = $client->post("{$snapHost}/snap/v1/transactions", [
             'transaction_details' => [
                 'order_id' => $order->midtrans_order_id,
                 'gross_amount' => $order->amount,

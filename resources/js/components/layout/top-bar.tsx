@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useAppearance } from '@/hooks/use-appearance';
 import { useBookmarks } from '@/hooks/use-bookmarks';
 import { useLiveClock } from '@/hooks/use-live-clock';
+import LogoutButton from '@/components/layout/logout-button';
 import { dashboard, login } from '@/routes';
 import { index as notificationsIndex } from '@/routes/notifications';
 import { index as submissionsIndex } from '@/routes/submissions';
@@ -132,6 +133,17 @@ export default function TopBar({ onOpenSaved }: { onOpenSaved: () => void }) {
                                 aria-hidden="true"
                             />
                         </Link>
+                        {auth.user && (
+                            <LogoutButton
+                                className="rounded-lg p-1.5 text-slate-300 transition hover:bg-slate-800 hover:text-rose-400 focus-visible:ring-2 focus-visible:ring-brand-blue focus-visible:outline-none"
+                                aria-label="Keluar"
+                            >
+                                <i
+                                    className="fa-solid fa-right-from-bracket text-sm"
+                                    aria-hidden="true"
+                                />
+                            </LogoutButton>
+                        )}
                         <button
                             type="button"
                             onClick={onOpenSaved}

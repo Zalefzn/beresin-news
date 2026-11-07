@@ -13,6 +13,7 @@ type DashboardProps = {
         pendingComments: number;
         subscribers: number;
         pendingReviews: number;
+        users: number;
     };
     viewsChart?: ChartPoint[];
     popular: ArticleCard[];
@@ -53,6 +54,7 @@ export default function AdminDashboard({
             value: stats.subscribers,
             icon: 'fa-envelope',
         },
+        { label: 'Jumlah pengguna', value: stats.users, icon: 'fa-users' },
     ];
 
     return (
@@ -62,7 +64,7 @@ export default function AdminDashboard({
                 description="Ringkasan aktivitas redaksi."
             />
 
-            <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-6">
                 {tiles.map((tile) => (
                     <div key={tile.label} className={`${card} p-4`}>
                         <i

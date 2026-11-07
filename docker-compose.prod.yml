@@ -1,0 +1,97 @@
+# BeresinNews on the shared VPS. Traefik (external network "traefik") routes beresinnews.com here
+# and issues the certificate; nothing in this file publishes a port on the host.
+#
+#   docker compose -f docker-compose.prod.yml --env-file .env up -d --build
+
+x-app: &app
+  image: beresinnews-app:latest
+  env_file: .env
+  restart: unless-stopped
+  volumes:
+    - storage:/var/www/html/storage/app
+  depends_on:
+    - db
+  networks:
+    - internal
+
+services:
+  app:
+    <<: *app
+    container_name: beresinnews-app
+    build:
+      context: .
+      args:
+        VITE_APP_NAME: ${APP_NAME}
+        VITE_REVERB_APP_KEY: ${REVERB_APP_KEY}
+        VITE_REVERB_HOST: ${APP_DOMAIN}
+        VITE_REVERB_PORT: 443
+        VITE_REVERB_SCHEME: https
+    networks:
+      - internal
+      - traefik
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=traefik
+      - traefik.http.routers.beresinnews.rule=Host(`${APP_DOMAIN}`) || Host(`www.${APP_DOMAIN}`)
+      - traefik.http.routers.beresinnews.entrypoints=websecure
+      - traefik.http.routers.beresinnews.tls.certresolver=myresolver
+      - traefik.http.routers.beresinnews.tls.domains[0].main=${APP_DOMAIN}
+      - traefik.http.routers.beresinnews.tls.domains[0].sans=www.${APP_DOMAIN}
+      - traefik.http.routers.beresinnews.service=beresinnews
+      - traefik.http.services.beresinnews.loadbalancer.server.port=80
+      - traefik.http.routers.beresinnews-http.rule=Host(`${APP_DOMAIN}`) || Host(`www.${APP_DOMAIN}`)
+      - traefik.http.routers.beresinnews-http.entrypoints=web
+      - traefik.http.routers.beresinnews-http.middlewares=beresinnews-https
+      - traefik.http.middlewares.beresinnews-https.redirectscheme.scheme=https
+      - traefik.http.middlewares.beresinnews-https.redirectscheme.permanent=true
+
+  queue:
+    <<: *app
+    container_name: beresinnews-queue
+    command: setpriv --reuid=www-data --regid=www-data --init-groups php artisan queue:work --tries=3 --max-time=3600 --sleep=3
+
+  scheduler:
+    <<: *app
+    container_name: beresinnews-scheduler
+    command: setpriv --reuid=www-data --regid=www-data --init-groups php artisan schedule:work
+
+  reverb:
+    <<: *app
+    container_name: beresinnews-reverb
+    command: setpriv --reuid=www-data --regid=www-data --init-groups php artisan reverb:start --host=0.0.0.0 --port=8080
+    networks:
+      - internal
+      - traefik
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=traefik
+      - traefik.http.routers.beresinnews-ws.rule=(Host(`${APP_DOMAIN}`) || Host(`www.${APP_DOMAIN}`)) && (PathPrefix(`/app/`) || PathPrefix(`/apps/`))
+      - traefik.http.routers.beresinnews-ws.entrypoints=websecure
+      - traefik.http.routers.beresinnews-ws.tls.certresolver=myresolver
+      - traefik.http.routers.beresinnews-ws.service=beresinnews-ws
+      - traefik.http.services.beresinnews-ws.loadbalancer.server.port=8080
+
+  db:
+    image: postgres:16-alpine
+    container_name: beresinnews-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_DATABASE}
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - internal
+
+networks:
+  internal:
+    name: beresinnews-internal
+  traefik:
+    external: true
+
+volumes:
+  storage:
+    name: beresinnews-storage
+  pgdata:
+    name: beresinnews-pgdata
