@@ -37,8 +37,8 @@ test('a writer can save a draft and submit for review', function () {
     expect($article->fresh()->status)->toBe(ArticleStatus::Review);
 });
 
-test('the trusted journalist publishes directly without a review or payment', function () {
-    $writer = User::factory()->directPublisher()->create();
+test('a writer publishes directly without a review or payment', function () {
+    $writer = User::factory()->writer()->create();
 
     $this->actingAs($writer)->get(route('admin.articles.create'))
         ->assertInertia(fn (Assert $page) => $page->where('canPublish', true)->where('canFeature', false));
@@ -53,8 +53,8 @@ test('the trusted journalist publishes directly without a review or payment', fu
         ->and($article->orders()->count())->toBe(0);
 });
 
-test('other writers and editors cannot publish or schedule', function (string $role, string $status) {
-    $user = User::factory()->{$role}()->create();
+test('an editor cannot publish or schedule', function (string $status) {
+    $user = User::factory()->editor()->create();
 
     $this->actingAs($user)->get(route('admin.articles.create'))
         ->assertInertia(fn (Assert $page) => $page->where('canPublish', false));
@@ -64,26 +64,7 @@ test('other writers and editors cannot publish or schedule', function (string $r
         ->assertSessionHasErrors('status');
 
     expect(Article::query()->count())->toBe(0);
-})->with(['writer', 'editor'])->with(['published', 'scheduled', 'archived']);
-
-test('only the trusted journalist edits their own live articles', function () {
-    $trusted = User::factory()->directPublisher()->create();
-    $writer = User::factory()->writer()->create();
-
-    $this->actingAs($trusted)->get(route('admin.articles.edit', Article::factory()->create(['author_id' => $trusted->id])))->assertOk();
-    $this->actingAs($writer)->get(route('admin.articles.edit', Article::factory()->create(['author_id' => $writer->id])))->assertForbidden();
-});
-
-test('the admin grants direct publishing to writers only', function () {
-    $admin = User::factory()->admin()->create();
-    $payload = ['name' => 'Jurnalis Beresin', 'email' => 'jurnalis@example.com', 'password' => 'rahasia123', 'can_publish_directly' => true];
-
-    $this->actingAs($admin)->post(route('admin.users.store'), [...$payload, 'role' => 'writer'])->assertSessionHasNoErrors();
-    $this->actingAs($admin)->post(route('admin.users.store'), [...$payload, 'email' => 'redaktur@example.com', 'name' => 'Redaktur', 'role' => 'editor'])->assertSessionHasNoErrors();
-
-    expect(User::query()->where('email', 'jurnalis@example.com')->value('can_publish_directly'))->toBeTrue()
-        ->and(User::query()->where('email', 'redaktur@example.com')->value('can_publish_directly'))->toBeFalse();
-});
+})->with(['published', 'scheduled', 'archived']);
 
 test('a writer cannot set headline flags through the request', function () {
     $writer = User::factory()->writer()->create();
@@ -94,7 +75,7 @@ test('a writer cannot set headline flags through the request', function () {
 });
 
 test('a writer can only touch their own articles', function () {
-    $writer = User::factory()->directPublisher()->create();
+    $writer = User::factory()->writer()->create();
     $foreign = Article::factory()->draft()->create();
     $ownPublished = Article::factory()->create(['author_id' => $writer->id]);
 

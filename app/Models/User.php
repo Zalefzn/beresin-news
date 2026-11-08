@@ -34,7 +34,6 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property string|null $bio
  * @property array<string, string>|null $social
  * @property bool $is_active
- * @property bool $can_publish_directly
  * @property Carbon|null $chat_blocked_at
  * @property string|null $two_factor_secret
  * @property string|null $two_factor_recovery_codes
@@ -54,7 +53,6 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
     protected $attributes = [
         'role' => 'reader',
         'is_active' => true,
-        'can_publish_directly' => false,
     ];
 
     /**
@@ -71,7 +69,6 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
             'role' => UserRole::class,
             'social' => 'array',
             'is_active' => 'boolean',
-            'can_publish_directly' => 'boolean',
             'chat_blocked_at' => 'datetime',
         ];
     }
@@ -101,13 +98,5 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
     public function isAdmin(): bool
     {
         return $this->role === UserRole::Admin;
-    }
-
-    /**
-     * Beresin's own journalist, whom the admin trusts to publish without a review.
-     */
-    public function publishesDirectly(): bool
-    {
-        return $this->role === UserRole::Writer && $this->can_publish_directly;
     }
 }

@@ -37,7 +37,6 @@ type UserRow = {
     job_title: string | null;
     bio: string | null;
     is_active: boolean;
-    can_publish_directly: boolean;
     is_new: boolean;
     joined: string | null;
     joined_relative: string | null;
@@ -72,7 +71,6 @@ function UserDialog({
         job_title: user?.job_title ?? '',
         bio: user?.bio ?? '',
         is_active: user?.is_active ?? true,
-        can_publish_directly: user?.can_publish_directly ?? false,
     });
 
     const submit = (event: FormEvent): void => {
@@ -269,18 +267,6 @@ function UserDialog({
                 checked={data.is_active}
                 onChange={(checked) => setData('is_active', checked)}
             />
-            {data.role === 'writer' && (
-                <SwitchField
-                    id="can_publish_directly"
-                    label="Terbit langsung tanpa tinjauan"
-                    description="Khusus jurnalis BeresinNews. Artikelnya langsung tayang tanpa persetujuan admin."
-                    icon="fa-bolt"
-                    checked={data.can_publish_directly}
-                    onChange={(checked) =>
-                        setData('can_publish_directly', checked)
-                    }
-                />
-            )}
         </FormDialog>
     );
 }

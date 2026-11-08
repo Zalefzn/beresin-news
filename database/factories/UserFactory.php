@@ -52,14 +52,6 @@ class UserFactory extends Factory
         return $this->withRole(UserRole::Writer);
     }
 
-    /**
-     * Beresin's own journalist, who publishes without a review.
-     */
-    public function directPublisher(): static
-    {
-        return $this->writer()->afterMaking(fn (User $user) => $user->can_publish_directly = true);
-    }
-
     private function withRole(UserRole $role): static
     {
         return $this->afterMaking(fn (User $user) => $user->role = $role);

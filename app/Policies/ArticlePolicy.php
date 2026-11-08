@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Policies;
 
 use App\Enums\ArticleStatus;
+use App\Enums\UserRole;
 use App\Models\Article;
 use App\Models\User;
 
@@ -36,12 +37,12 @@ class ArticlePolicy
     }
 
     /**
-     * The admin, and the journalist accounts the admin trusts, put articles live without a review.
+     * The admin and journalists put articles live without a review.
      * Everyone else hands their work to the admin.
      */
     public function publish(User $user): bool
     {
-        return $user->isAdmin() || $user->publishesDirectly();
+        return $user->isAdmin() || $user->role === UserRole::Writer;
     }
 
     /**
