@@ -41,7 +41,14 @@ test('a writer publishes directly without a review or payment', function () {
     $writer = User::factory()->writer()->create();
 
     $this->actingAs($writer)->get(route('admin.articles.create'))
-        ->assertInertia(fn (Assert $page) => $page->where('canPublish', true)->where('canFeature', false));
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('canPublish', true)
+            ->where('canFeature', false)
+            ->where('defaultStatus', 'published')
+            ->where('statuses', fn ($statuses): bool => $statuses->pluck('value')->intersect(['review', 'rejected'])->isEmpty()));
+
+    $this->actingAs(User::factory()->editor()->create())->get(route('admin.articles.create'))
+        ->assertInertia(fn (Assert $page) => $page->where('defaultStatus', 'draft'));
 
     $this->actingAs($writer)
         ->post(route('admin.articles.store'), articlePayload(['status' => 'published']))

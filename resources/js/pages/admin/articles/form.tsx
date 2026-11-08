@@ -38,6 +38,7 @@ type ArticleFormProps = {
     statuses: { value: string; label: string }[];
     canPublish: boolean;
     canFeature: boolean;
+    defaultStatus: string;
 };
 
 const AUTOSAVABLE_STATUSES = ['draft', 'review'];
@@ -59,6 +60,7 @@ export default function AdminArticleForm({
     statuses,
     canPublish,
     canFeature,
+    defaultStatus,
 }: ArticleFormProps) {
     const form = useForm({
         _method: article ? 'put' : 'post',
@@ -75,7 +77,7 @@ export default function AdminArticleForm({
         is_headline: article?.is_headline ?? false,
         is_trending: article?.is_trending ?? false,
         is_breaking: article?.is_breaking ?? false,
-        status: article?.status ?? 'draft',
+        status: article?.status ?? defaultStatus,
         published_at: article?.published_at ?? '',
         meta_title: article?.meta_title ?? '',
         meta_description: article?.meta_description ?? '',
@@ -185,6 +187,7 @@ export default function AdminArticleForm({
                         >
                             <input
                                 id="title"
+                                placeholder="Contoh: Pemerintah Luncurkan Program Literasi Digital Nasional"
                                 value={data.title}
                                 onChange={(event) =>
                                     setData('title', event.target.value)
@@ -203,6 +206,7 @@ export default function AdminArticleForm({
                             >
                                 <input
                                     id="slug"
+                                    placeholder="contoh-judul-artikel"
                                     value={data.slug}
                                     onChange={(event) =>
                                         setData('slug', event.target.value)
@@ -219,6 +223,7 @@ export default function AdminArticleForm({
                             >
                                 <input
                                     id="dateline"
+                                    placeholder="Contoh: JAKARTA"
                                     value={data.dateline}
                                     onChange={(event) =>
                                         setData('dateline', event.target.value)
@@ -235,6 +240,7 @@ export default function AdminArticleForm({
                         >
                             <textarea
                                 id="excerpt"
+                                placeholder="Tulis ringkasan singkat berita ini."
                                 rows={3}
                                 maxLength={EXCERPT_MAX_LENGTH}
                                 value={data.excerpt}
@@ -259,6 +265,7 @@ export default function AdminArticleForm({
                                 value={data.body}
                                 onChange={(html) => setData('body', html)}
                                 labelId="body-label"
+                                placeholder="Tulis isi berita di sini..."
                             />
                             {errors.body && (
                                 <p className="mt-1 text-xs text-rose-600">
@@ -284,6 +291,7 @@ export default function AdminArticleForm({
                         >
                             <input
                                 id="meta_title"
+                                placeholder="Kosongkan untuk memakai judul artikel"
                                 value={data.meta_title}
                                 onChange={(event) =>
                                     setData('meta_title', event.target.value)
@@ -299,6 +307,7 @@ export default function AdminArticleForm({
                         >
                             <textarea
                                 id="meta_description"
+                                placeholder="Deskripsi singkat untuk hasil pencarian Google"
                                 rows={2}
                                 value={data.meta_description}
                                 onChange={(event) =>
@@ -336,7 +345,9 @@ export default function AdminArticleForm({
                             error={errors.status}
                             hint={
                                 canPublish
-                                    ? undefined
+                                    ? defaultStatus === 'published'
+                                        ? 'Artikel langsung tayang setelah disimpan, tanpa persetujuan admin.'
+                                        : undefined
                                     : 'Ajukan ke Tinjauan agar redaktur dapat menerbitkan.'
                             }
                         >
@@ -426,6 +437,7 @@ export default function AdminArticleForm({
                         >
                             <input
                                 id="tags"
+                                placeholder="Contoh: teknologi, pendidikan, ekonomi"
                                 value={tagInput}
                                 onChange={(event) => {
                                     setTagInput(event.target.value);
@@ -525,6 +537,7 @@ export default function AdminArticleForm({
                         >
                             <input
                                 id="cover_caption"
+                                placeholder="Contoh: Suasana peluncuran program di Jakarta."
                                 value={data.cover_caption}
                                 onChange={(event) =>
                                     setData('cover_caption', event.target.value)
@@ -540,6 +553,7 @@ export default function AdminArticleForm({
                         >
                             <input
                                 id="cover_credit"
+                                placeholder="Contoh: Foto: Rian Firmansyah/BeresinNews"
                                 value={data.cover_credit}
                                 onChange={(event) =>
                                     setData('cover_credit', event.target.value)

@@ -17,6 +17,7 @@ type RichTextEditorProps = {
     onChange: (html: string) => void;
     labelId?: string;
     uploadUrl?: string;
+    placeholder?: string;
 };
 
 type UrlMode = 'link' | 'youtube' | null;
@@ -80,6 +81,7 @@ export default function RichTextEditor({
     onChange,
     labelId,
     uploadUrl,
+    placeholder,
 }: RichTextEditorProps) {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [urlMode, setUrlMode] = useState<UrlMode>(null);
@@ -268,7 +270,17 @@ export default function RichTextEditor({
                 </div>
             )}
 
-            <EditorContent editor={editor} />
+            <div className="relative">
+                {placeholder && (value === '' || value === '<p></p>') && (
+                    <p
+                        aria-hidden="true"
+                        className="pointer-events-none absolute top-4 left-4 text-sm text-slate-400"
+                    >
+                        {placeholder}
+                    </p>
+                )}
+                <EditorContent editor={editor} />
+            </div>
         </div>
     );
 }

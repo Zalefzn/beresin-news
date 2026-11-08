@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Admin;
 use App\Actions\GenerateArticleSlug;
 use App\Actions\SanitizeHtml;
 use App\Enums\ArticleStatus;
+use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\AutosaveArticleRequest;
 use App\Http\Requests\Admin\SaveArticleRequest;
@@ -255,11 +256,28 @@ class ArticleController extends Controller
             ] : null,
             'categories' => $this->categoryOptions(),
             'statuses' => collect($this->statusOptions())
-                ->filter(fn (array $option): bool => $canPublish || ! ArticleStatus::from($option['value'])->requiresPublishPermission())
+                ->filter(fn (array $option): bool => $this->isSelectableStatus(ArticleStatus::from($option['value']), $user, $article))
                 ->values(),
             'canPublish' => $canPublish,
             'canFeature' => $user->isAdmin(),
+            'defaultStatus' => ($user->role === UserRole::Writer ? ArticleStatus::Published : ArticleStatus::Draft)->value,
         ]);
+    }
+
+    /**
+     * Journalists publish without a review, so the review statuses only show on an article already in one.
+     */
+    private function isSelectableStatus(ArticleStatus $status, User $user, ?Article $article): bool
+    {
+        if ($status === $article?->status) {
+            return true;
+        }
+
+        if ($user->role === UserRole::Writer && in_array($status, [ArticleStatus::Review, ArticleStatus::Rejected], true)) {
+            return false;
+        }
+
+        return $user->can('publish', Article::class) || ! $status->requiresPublishPermission();
     }
 
     /** @return list<array{value: string, label: string}> */
