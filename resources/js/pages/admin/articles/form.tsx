@@ -37,6 +37,7 @@ type ArticleFormProps = {
     categories: { id: number; name: string }[];
     statuses: { value: string; label: string }[];
     canPublish: boolean;
+    canFeature: boolean;
 };
 
 const AUTOSAVABLE_STATUSES = ['draft', 'review'];
@@ -57,6 +58,7 @@ export default function AdminArticleForm({
     categories,
     statuses,
     canPublish,
+    canFeature,
 }: ArticleFormProps) {
     const form = useForm({
         _method: article ? 'put' : 'post',
@@ -438,7 +440,7 @@ export default function AdminArticleForm({
                                 className={textInput}
                             />
                         </Field>
-                        {canPublish && (
+                        {canFeature && (
                             <fieldset className="space-y-2">
                                 <legend className="mb-1.5 flex items-center gap-1.5 text-xs font-bold text-slate-700 dark:text-slate-200">
                                     <i

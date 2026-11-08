@@ -37,15 +37,53 @@ test('a writer can save a draft and submit for review', function () {
     expect($article->fresh()->status)->toBe(ArticleStatus::Review);
 });
 
-test('a writer cannot publish or schedule', function (string $status) {
-    $writer = User::factory()->writer()->create();
+test('the trusted journalist publishes directly without a review or payment', function () {
+    $writer = User::factory()->directPublisher()->create();
+
+    $this->actingAs($writer)->get(route('admin.articles.create'))
+        ->assertInertia(fn (Assert $page) => $page->where('canPublish', true)->where('canFeature', false));
 
     $this->actingAs($writer)
+        ->post(route('admin.articles.store'), articlePayload(['status' => 'published']))
+        ->assertSessionHasNoErrors();
+
+    $article = Article::query()->firstOrFail();
+    expect($article->isPubliclyVisible())->toBeTrue()
+        ->and($article->package)->toBeNull()
+        ->and($article->orders()->count())->toBe(0);
+});
+
+test('other writers and editors cannot publish or schedule', function (string $role, string $status) {
+    $user = User::factory()->{$role}()->create();
+
+    $this->actingAs($user)->get(route('admin.articles.create'))
+        ->assertInertia(fn (Assert $page) => $page->where('canPublish', false));
+
+    $this->actingAs($user)
         ->post(route('admin.articles.store'), articlePayload(['status' => $status, 'published_at' => now()->addDay()->toDateTimeString()]))
         ->assertSessionHasErrors('status');
 
     expect(Article::query()->count())->toBe(0);
-})->with(['published', 'scheduled', 'archived']);
+})->with(['writer', 'editor'])->with(['published', 'scheduled', 'archived']);
+
+test('only the trusted journalist edits their own live articles', function () {
+    $trusted = User::factory()->directPublisher()->create();
+    $writer = User::factory()->writer()->create();
+
+    $this->actingAs($trusted)->get(route('admin.articles.edit', Article::factory()->create(['author_id' => $trusted->id])))->assertOk();
+    $this->actingAs($writer)->get(route('admin.articles.edit', Article::factory()->create(['author_id' => $writer->id])))->assertForbidden();
+});
+
+test('the admin grants direct publishing to writers only', function () {
+    $admin = User::factory()->admin()->create();
+    $payload = ['name' => 'Jurnalis Beresin', 'email' => 'jurnalis@example.com', 'password' => 'rahasia123', 'can_publish_directly' => true];
+
+    $this->actingAs($admin)->post(route('admin.users.store'), [...$payload, 'role' => 'writer'])->assertSessionHasNoErrors();
+    $this->actingAs($admin)->post(route('admin.users.store'), [...$payload, 'email' => 'redaktur@example.com', 'name' => 'Redaktur', 'role' => 'editor'])->assertSessionHasNoErrors();
+
+    expect(User::query()->where('email', 'jurnalis@example.com')->value('can_publish_directly'))->toBeTrue()
+        ->and(User::query()->where('email', 'redaktur@example.com')->value('can_publish_directly'))->toBeFalse();
+});
 
 test('a writer cannot set headline flags through the request', function () {
     $writer = User::factory()->writer()->create();
@@ -55,15 +93,15 @@ test('a writer cannot set headline flags through the request', function () {
     expect(Article::query()->firstOrFail())->is_headline->toBeFalse()->is_breaking->toBeFalse();
 });
 
-test('a writer can only touch their own unpublished articles', function () {
-    $writer = User::factory()->writer()->create();
+test('a writer can only touch their own articles', function () {
+    $writer = User::factory()->directPublisher()->create();
     $foreign = Article::factory()->draft()->create();
     $ownPublished = Article::factory()->create(['author_id' => $writer->id]);
 
     $this->actingAs($writer)->get(route('admin.articles.edit', $foreign))->assertForbidden();
     $this->actingAs($writer)->put(route('admin.articles.update', $foreign), articlePayload())->assertForbidden();
     $this->actingAs($writer)->delete(route('admin.articles.destroy', $foreign))->assertForbidden();
-    $this->actingAs($writer)->get(route('admin.articles.edit', $ownPublished))->assertForbidden();
+    $this->actingAs($writer)->get(route('admin.articles.edit', $ownPublished))->assertOk();
 });
 
 test('the article list shows writers only their own work', function () {

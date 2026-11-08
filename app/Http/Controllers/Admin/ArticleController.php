@@ -229,6 +229,7 @@ class ArticleController extends Controller
     {
         /** @var User $user */
         $user = $request->user();
+        $canPublish = $user->can('publish', Article::class);
 
         return Inertia::render('admin/articles/form', [
             'article' => $article ? [
@@ -254,9 +255,10 @@ class ArticleController extends Controller
             ] : null,
             'categories' => $this->categoryOptions(),
             'statuses' => collect($this->statusOptions())
-                ->filter(fn (array $option): bool => $user->isAdmin() || ! ArticleStatus::from($option['value'])->requiresPublishPermission())
+                ->filter(fn (array $option): bool => $canPublish || ! ArticleStatus::from($option['value'])->requiresPublishPermission())
                 ->values(),
-            'canPublish' => $user->isAdmin(),
+            'canPublish' => $canPublish,
+            'canFeature' => $user->isAdmin(),
         ]);
     }
 

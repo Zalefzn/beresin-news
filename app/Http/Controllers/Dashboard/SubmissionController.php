@@ -21,9 +21,11 @@ use App\Models\Article;
 use App\Models\Category;
 use App\Models\User;
 use App\Notifications\SubmissionNotification;
+use Closure;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -32,9 +34,24 @@ use Inertia\Response;
 use Symfony\Component\HttpFoundation\Response as HttpResponse;
 use Throwable;
 
-class SubmissionController extends Controller
+class SubmissionController extends Controller implements HasMiddleware
 {
     private const int PER_PAGE = 10;
+
+    /**
+     * Paid submissions are for readers. Newsroom staff write for free in the panel,
+     * and never see the package prices.
+     *
+     * @return list<Closure(Request, Closure): HttpResponse>
+     */
+    public static function middleware(): array
+    {
+        return [
+            fn (Request $request, Closure $next): HttpResponse => $request->user()?->canAccessNewsroom()
+                ? redirect()->route('admin.articles.create')
+                : $next($request),
+        ];
+    }
 
     public function __construct(
         private SanitizeHtml $sanitizer,

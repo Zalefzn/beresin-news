@@ -43,6 +43,7 @@ class UserController extends Controller
                     'job_title' => $user->job_title,
                     'bio' => $user->bio,
                     'is_active' => $user->is_active,
+                    'can_publish_directly' => $user->can_publish_directly,
                     'is_new' => $user->created_at?->gte(now()->subDay()) ?? false,
                     'joined' => $user->created_at?->translatedFormat('j M Y, H:i'),
                     'joined_relative' => $user->created_at?->diffForHumans(),
@@ -59,8 +60,9 @@ class UserController extends Controller
         /** @var array<string, mixed> $data */
         $data = $request->validated();
 
-        $user = new User(collect($data)->except('role')->all());
+        $user = new User(collect($data)->except(['role', 'can_publish_directly'])->all());
         $user->role = UserRole::from((string) $data['role']);
+        $user->can_publish_directly = $user->role === UserRole::Writer && (bool) ($data['can_publish_directly'] ?? false);
         $user->forceFill(['email_verified_at' => now()]);
         $user->save();
 
@@ -83,7 +85,7 @@ class UserController extends Controller
             return back();
         }
 
-        $attributes = collect($data)->except('role');
+        $attributes = collect($data)->except(['role', 'can_publish_directly']);
 
         if (empty($data['password'])) {
             $attributes = $attributes->except('password');
@@ -91,6 +93,7 @@ class UserController extends Controller
 
         $user->fill($attributes->all());
         $user->role = UserRole::from((string) $data['role']);
+        $user->can_publish_directly = $user->role === UserRole::Writer && (bool) ($data['can_publish_directly'] ?? false);
         $user->save();
 
         Inertia::flash('success', 'Pengguna berhasil diperbarui.');

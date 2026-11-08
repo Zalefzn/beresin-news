@@ -5,6 +5,7 @@ import { useBookmarks } from '@/hooks/use-bookmarks';
 import { useLiveClock } from '@/hooks/use-live-clock';
 import LogoutButton from '@/components/layout/logout-button';
 import { dashboard, login } from '@/routes';
+import { create as createArticle } from '@/routes/admin/articles';
 import { index as notificationsIndex } from '@/routes/notifications';
 import { index as submissionsIndex } from '@/routes/submissions';
 
@@ -102,7 +103,11 @@ export default function TopBar({ onOpenSaved }: { onOpenSaved: () => void }) {
                     )}
 
                     <Link
-                        href={submissionsIndex()}
+                        href={
+                            auth.user?.can_access_newsroom
+                                ? createArticle()
+                                : submissionsIndex()
+                        }
                         className="flex items-center gap-1.5 rounded-lg bg-brand-blue px-2.5 py-1 font-bold whitespace-nowrap text-white transition hover:bg-brand-dark-blue"
                     >
                         <i

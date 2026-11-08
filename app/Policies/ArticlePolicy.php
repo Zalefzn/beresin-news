@@ -36,9 +36,18 @@ class ArticlePolicy
     }
 
     /**
-     * Only the admin decides what goes live.
+     * The admin, and the journalist accounts the admin trusts, put articles live without a review.
+     * Everyone else hands their work to the admin.
      */
     public function publish(User $user): bool
+    {
+        return $user->isAdmin() || $user->publishesDirectly();
+    }
+
+    /**
+     * Only the admin approves other people's work, paid submissions included.
+     */
+    public function review(User $user): bool
     {
         return $user->isAdmin();
     }
@@ -58,11 +67,12 @@ class ArticlePolicy
     }
 
     /**
-     * Staff never edit live or paid work, since that would bypass the admin's review.
+     * Staff never edit paid work, and only those who may publish touch live work,
+     * since anything else would bypass the admin's review.
      */
     private function canEditInternally(User $user, Article $article): bool
     {
-        if ($article->package !== null || $article->status->requiresPublishPermission()) {
+        if ($article->package !== null || ($article->status->requiresPublishPermission() && ! $this->publish($user))) {
             return false;
         }
 

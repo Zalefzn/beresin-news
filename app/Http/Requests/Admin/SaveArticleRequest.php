@@ -51,8 +51,8 @@ class SaveArticleRequest extends FormRequest
         $validator->after(function (Validator $validator): void {
             $status = ArticleStatus::tryFrom((string) $this->input('status'));
 
-            if ($status?->requiresPublishPermission() && ! $this->user()?->isAdmin()) {
-                $validator->errors()->add('status', 'Hanya admin yang dapat menerbitkan artikel. Ajukan untuk ditinjau admin.');
+            if ($status?->requiresPublishPermission() && ! $this->user()?->can('publish', Article::class)) {
+                $validator->errors()->add('status', 'Anda tidak dapat menerbitkan artikel. Ajukan untuk ditinjau admin.');
             }
 
             /** @var Article|null $article */

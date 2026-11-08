@@ -24,7 +24,7 @@ class ReviewController extends Controller
 
     public function index(Request $request): Response
     {
-        Gate::authorize('publish', Article::class);
+        Gate::authorize('review', Article::class);
 
         $package = $request->string('paket')->toString();
 
@@ -62,7 +62,7 @@ class ReviewController extends Controller
 
     public function approve(Request $request, Article $article, ReviewArticle $review): RedirectResponse
     {
-        Gate::authorize('publish', Article::class);
+        Gate::authorize('review', Article::class);
 
         if ($article->package !== null && ! $article->hasPaidOrder()) {
             Inertia::flash('error', 'Naskah berbayar ini belum lunas, jadi belum bisa diterbitkan.');
@@ -79,7 +79,7 @@ class ReviewController extends Controller
 
     public function reject(Request $request, Article $article, ReviewArticle $review): RedirectResponse
     {
-        Gate::authorize('publish', Article::class);
+        Gate::authorize('review', Article::class);
 
         /** @var array{reason: string} $data */
         $data = $request->validate(['reason' => ['required', 'string', 'min:5', 'max:1000']], [], ['reason' => 'alasan penolakan']);

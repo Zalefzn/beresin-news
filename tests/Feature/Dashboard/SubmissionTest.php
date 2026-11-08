@@ -68,6 +68,16 @@ test('guests and unverified users cannot submit news', function () {
         ->assertRedirect(route('verification.notice'));
 });
 
+test('newsroom staff are sent to the free article form instead of the paid packages', function () {
+    $writer = User::factory()->writer()->create();
+
+    $this->actingAs($writer)->get(route('submissions.create'))->assertRedirect(route('admin.articles.create'));
+    $this->actingAs($writer)->get(route('submissions.index'))->assertRedirect(route('admin.articles.create'));
+    $this->actingAs($writer)->post(route('submissions.store'), submissionPayload())->assertRedirect(route('admin.articles.create'));
+
+    expect(Article::query()->count())->toBe(0);
+});
+
 test('a saved submission stays a sanitized draft and asks for payment', function () {
     Notification::fake();
     $user = User::factory()->create();
