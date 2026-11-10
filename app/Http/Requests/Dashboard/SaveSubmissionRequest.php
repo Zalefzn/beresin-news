@@ -26,7 +26,7 @@ class SaveSubmissionRequest extends FormRequest
             'body' => ['required', 'string'],
             'category_id' => ['required', 'integer', Rule::exists('categories', 'id')->where('is_active', true)],
             'package' => ['required', Rule::enum(ArticlePackage::class)],
-            'cover' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+            'cover' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:10240'],
             'cover_caption' => ['nullable', 'string', 'max:255'],
             'cover_credit' => ['nullable', 'string', 'max:255'],
             'pay_now' => ['boolean'],

@@ -30,7 +30,7 @@ class SaveArticleRequest extends FormRequest
             'dateline' => ['nullable', 'string', 'max:100'],
             'excerpt' => ['nullable', 'string', 'max:300'],
             'body' => ['required', 'string'],
-            'cover' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+            'cover' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:10240'],
             'cover_caption' => ['nullable', 'string', 'max:255'],
             'cover_credit' => ['nullable', 'string', 'max:255'],
             'category_id' => ['required', 'integer', 'exists:categories,id'],

@@ -4,6 +4,12 @@ import Field from '@/components/admin/field';
 import RichTextEditor from '@/components/admin/rich-text-editor';
 import SectionHeader from '@/components/news/section-header';
 import SeoHead from '@/components/news/seo-head';
+import { useKeepSessionAlive } from '@/hooks/use-keep-session-alive';
+import {
+    MAX_IMAGE_BYTES,
+    notifyFormErrors,
+    notifySaveFailed,
+} from '@/lib/form-feedback';
 import { card, primaryButton, secondaryButton, textInput } from '@/lib/ui';
 import { cn } from '@/lib/utils';
 import { index, store, update, uploadImage } from '@/routes/submissions';
@@ -60,6 +66,8 @@ export default function SubmissionForm({
 
     const { data, setData, errors, processing } = form;
     const isPaid = article?.is_paid ?? false;
+
+    useKeepSessionAlive();
     const selected = packages.find((item) => item.value === data.package);
 
     const submit = (payNow: boolean): void => {
@@ -67,6 +75,12 @@ export default function SubmissionForm({
         form.post(article ? update.url(article.id) : store.url(), {
             forceFormData: true,
             preserveScroll: true,
+            onError: notifyFormErrors,
+            onNetworkError: () => {
+                notifySaveFailed();
+
+                return false;
+            },
         });
     };
 
@@ -196,7 +210,7 @@ export default function SubmissionForm({
                                 id="cover"
                                 label="Gambar Sampul"
                                 error={errors.cover}
-                                hint="JPG, PNG, atau WebP. Maks. 5 MB."
+                                hint="JPG, PNG, atau WebP. Maks. 10 MB."
                             >
                                 {article?.cover_url && (
                                     <img
@@ -211,12 +225,27 @@ export default function SubmissionForm({
                                     id="cover"
                                     type="file"
                                     accept="image/jpeg,image/png,image/webp"
-                                    onChange={(event) =>
-                                        setData(
-                                            'cover',
-                                            event.target.files?.[0] ?? null,
-                                        )
-                                    }
+                                    onChange={(event) => {
+                                        const file =
+                                            event.target.files?.[0] ?? null;
+
+                                        if (
+                                            file &&
+                                            file.size > MAX_IMAGE_BYTES
+                                        ) {
+                                            event.target.value = '';
+                                            setData('cover', null);
+                                            form.setError(
+                                                'cover',
+                                                'Ukuran gambar sampul maksimal 10 MB.',
+                                            );
+
+                                            return;
+                                        }
+
+                                        form.clearErrors('cover');
+                                        setData('cover', file);
+                                    }}
                                     className={textInput}
                                 />
                             </Field>

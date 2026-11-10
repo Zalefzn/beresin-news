@@ -192,3 +192,24 @@ test('image uploads accept images only', function () {
         ->postJson(route('admin.articles.upload-image'), ['image' => UploadedFile::fake()->create('jahat.php', 10, 'application/x-php')])
         ->assertUnprocessable();
 });
+
+test('cover photos up to 10 MB are accepted and larger ones are refused', function () {
+    Storage::fake('public');
+    $writer = User::factory()->writer()->create();
+
+    $this->actingAs($writer)
+        ->post(route('admin.articles.store'), articlePayload(['cover' => UploadedFile::fake()->image('sampul.jpg')->size(8 * 1024)]))
+        ->assertSessionHasNoErrors();
+
+    $this->actingAs($writer)
+        ->post(route('admin.articles.store'), articlePayload(['title' => 'Artikel Lain', 'cover' => UploadedFile::fake()->image('besar.jpg')->size(11 * 1024)]))
+        ->assertSessionHasErrors('cover');
+});
+
+test('the keep-alive ping refreshes a signed-in session only', function () {
+    $this->get(route('session.keep-alive'))->assertRedirect(route('login'));
+
+    $this->actingAs(User::factory()->writer()->create())
+        ->get(route('session.keep-alive'))
+        ->assertNoContent();
+});

@@ -65,6 +65,7 @@ Route::post('midtrans/notifikasi', MidtransWebhookController::class)->middleware
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', DashboardController::class)->name('dashboard');
+    Route::get('sesi/perpanjang', fn () => response()->noContent())->middleware('throttle:30,1')->name('session.keep-alive');
 
     Route::get('kirim-berita', [SubmissionController::class, 'index'])->name('submissions.index');
     Route::get('kirim-berita/buat', [SubmissionController::class, 'create'])->name('submissions.create');

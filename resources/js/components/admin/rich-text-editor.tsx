@@ -166,7 +166,7 @@ export default function RichTextEditor({
             editor.chain().focus().setImage({ src: url }).run();
         } catch {
             toast.error(
-                'Gambar gagal diunggah. Gunakan JPG, PNG, atau WebP maksimal 5 MB.',
+                'Gambar gagal diunggah. Gunakan JPG, PNG, atau WebP maksimal 10 MB.',
             );
         }
     };

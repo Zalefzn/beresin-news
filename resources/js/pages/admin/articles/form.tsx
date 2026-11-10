@@ -4,6 +4,12 @@ import { useEffect, useRef, useState } from 'react';
 import AdminHeader from '@/components/admin/admin-header';
 import Field, { SwitchField } from '@/components/admin/field';
 import RichTextEditor from '@/components/admin/rich-text-editor';
+import { useKeepSessionAlive } from '@/hooks/use-keep-session-alive';
+import {
+    MAX_IMAGE_BYTES,
+    notifyFormErrors,
+    notifySaveFailed,
+} from '@/lib/form-feedback';
 import { card, primaryButton, secondaryButton, textInput } from '@/lib/ui';
 import { autosave, index, store, update } from '@/routes/admin/articles';
 
@@ -88,6 +94,8 @@ export default function AdminArticleForm({
     const [savedAt, setSavedAt] = useState<string | null>(null);
     const latest = useRef(data);
 
+    useKeepSessionAlive();
+
     useEffect(() => {
         latest.current = data;
     }, [data]);
@@ -127,6 +135,12 @@ export default function AdminArticleForm({
         form.post(article ? update.url(article.id) : store.url(), {
             forceFormData: true,
             preserveScroll: true,
+            onError: notifyFormErrors,
+            onNetworkError: () => {
+                notifySaveFailed();
+
+                return false;
+            },
         });
     };
 
@@ -505,7 +519,7 @@ export default function AdminArticleForm({
                             icon="fa-image"
                             label="Gambar Sampul"
                             error={errors.cover}
-                            hint="JPG, PNG, atau WebP. Maksimal 5 MB."
+                            hint="JPG, PNG, atau WebP. Maksimal 10 MB."
                         >
                             {article?.cover_url && (
                                 <img
@@ -520,12 +534,24 @@ export default function AdminArticleForm({
                                 id="cover"
                                 type="file"
                                 accept="image/jpeg,image/png,image/webp"
-                                onChange={(event) =>
-                                    setData(
-                                        'cover',
-                                        event.target.files?.[0] ?? null,
-                                    )
-                                }
+                                onChange={(event) => {
+                                    const file =
+                                        event.target.files?.[0] ?? null;
+
+                                    if (file && file.size > MAX_IMAGE_BYTES) {
+                                        event.target.value = '';
+                                        setData('cover', null);
+                                        form.setError(
+                                            'cover',
+                                            'Ukuran gambar sampul maksimal 10 MB.',
+                                        );
+
+                                        return;
+                                    }
+
+                                    form.clearErrors('cover');
+                                    setData('cover', file);
+                                }}
                                 className={textInput}
                             />
                         </Field>

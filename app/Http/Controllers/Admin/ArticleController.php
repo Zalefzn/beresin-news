@@ -151,7 +151,7 @@ class ArticleController extends Controller
     {
         Gate::authorize('create', Article::class);
 
-        $request->validate(['image' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120']]);
+        $request->validate(['image' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:10240']]);
 
         $path = $request->file('image')?->store('articles/inline', 'public');
 
