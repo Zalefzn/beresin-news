@@ -71,7 +71,13 @@ export default function SubmissionForm({
     const selected = packages.find((item) => item.value === data.package);
 
     const submit = (payNow: boolean): void => {
-        form.transform((current) => ({ ...current, pay_now: payNow }));
+        // After the first save Inertia keeps this component mounted on the edit page,
+        // so the method is read from the current article rather than the initial form data.
+        form.transform((current) => ({
+            ...current,
+            _method: article ? 'put' : 'post',
+            pay_now: payNow,
+        }));
         form.post(article ? update.url(article.id) : store.url(), {
             forceFormData: true,
             preserveScroll: true,

@@ -132,6 +132,12 @@ export default function AdminArticleForm({
 
     const submit = (event: FormEvent): void => {
         event.preventDefault();
+        // After the first save Inertia keeps this component mounted on the edit page,
+        // so the method is read from the current article rather than the initial form data.
+        form.transform((current) => ({
+            ...current,
+            _method: article ? 'put' : 'post',
+        }));
         form.post(article ? update.url(article.id) : store.url(), {
             forceFormData: true,
             preserveScroll: true,
