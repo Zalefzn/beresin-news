@@ -140,7 +140,7 @@ export default function AdminArticleForm({
         }));
         form.post(article ? update.url(article.id) : store.url(), {
             forceFormData: true,
-            preserveScroll: true,
+            preserveScroll: 'errors',
             onError: notifyFormErrors,
             onNetworkError: () => {
                 notifySaveFailed();

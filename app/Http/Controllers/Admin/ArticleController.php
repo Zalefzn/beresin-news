@@ -100,7 +100,7 @@ class ArticleController extends Controller
 
         Inertia::flash('success', 'Artikel berhasil disimpan.');
 
-        return redirect()->route('admin.articles.edit', $article);
+        return redirect()->route('admin.articles.index');
     }
 
     public function update(SaveArticleRequest $request, Article $article): RedirectResponse
@@ -111,7 +111,7 @@ class ArticleController extends Controller
 
         Inertia::flash('success', 'Artikel berhasil diperbarui.');
 
-        return back();
+        return redirect()->route('admin.articles.index');
     }
 
     /**

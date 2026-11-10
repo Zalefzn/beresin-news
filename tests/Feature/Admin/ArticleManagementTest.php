@@ -26,14 +26,16 @@ function articlePayload(array $overrides = []): array
 test('a writer can save a draft and submit for review', function () {
     $writer = User::factory()->writer()->create();
 
-    $this->actingAs($writer)->post(route('admin.articles.store'), articlePayload())->assertRedirect();
+    $this->actingAs($writer)->post(route('admin.articles.store'), articlePayload())->assertRedirect(route('admin.articles.index'));
 
     $article = Article::query()->firstOrFail();
     expect($article->author_id)->toBe($writer->id)
         ->and($article->slug)->toBe('judul-artikel-baru')
         ->and($article->status)->toBe(ArticleStatus::Draft);
 
-    $this->actingAs($writer)->put(route('admin.articles.update', $article), articlePayload(['status' => 'review']))->assertSessionHasNoErrors();
+    $this->actingAs($writer)->put(route('admin.articles.update', $article), articlePayload(['status' => 'review']))
+        ->assertSessionHasNoErrors()
+        ->assertRedirect(route('admin.articles.index'));
     expect($article->fresh()->status)->toBe(ArticleStatus::Review);
 });
 
