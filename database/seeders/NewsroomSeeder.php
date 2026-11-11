@@ -100,7 +100,7 @@ class NewsroomSeeder extends Seeder
             ...$attributes,
             'password' => Str::password(32),
         ]);
-        $user->forceFill(['email_verified_at' => now()])->save();
+        $user->forceFill(['email_verified_at' => now(), 'approved_at' => now()])->save();
 
         return $user;
     }

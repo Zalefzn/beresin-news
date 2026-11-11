@@ -215,7 +215,7 @@ class DashboardController extends Controller
     }
 
     /**
-     * @return Collection<int, array{id: int, name: string, email: string, role_label: string, is_active: bool, is_new: bool, joined: string|null, joined_at: string|null}>
+     * @return Collection<int, array{id: int, name: string, email: string, role_label: string, is_active: bool, is_pending: bool, is_new: bool, joined: string|null, joined_at: string|null}>
      */
     private function latestUsers(): Collection
     {
@@ -230,6 +230,7 @@ class DashboardController extends Controller
                 'email' => $user->email,
                 'role_label' => $user->role->label(),
                 'is_active' => $user->is_active,
+                'is_pending' => $user->is_active && ! $user->isApproved(),
                 'is_new' => $user->created_at?->gte(now()->subHours(self::NEW_USER_HOURS)) ?? false,
                 'joined' => $user->created_at?->diffForHumans(),
                 'joined_at' => $user->created_at?->toIso8601String(),

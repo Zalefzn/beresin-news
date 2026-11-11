@@ -6,6 +6,7 @@ namespace App\Notifications;
 
 use App\Models\Article;
 use App\Models\ArticleOrder;
+use App\Models\User;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\AnonymousNotifiable;
@@ -79,6 +80,26 @@ class SubmissionNotification extends Notification implements ShouldQueue
             "Naskah \"{$article->title}\" belum disetujui. Alasan: {$reason}. Anda bisa merevisi dan mengajukannya kembali tanpa biaya tambahan.",
             route('submissions.edit', $article),
             'Revisi Naskah',
+        );
+    }
+
+    public static function registrationPending(User $user): self
+    {
+        return new self(
+            'Pendaftar baru menunggu persetujuan',
+            "{$user->name} ({$user->email}) baru mendaftar dan menunggu persetujuan akun.",
+            route('admin.users.index', ['status' => 'menunggu']),
+            'Tinjau Pendaftar',
+        );
+    }
+
+    public static function accountApproved(): self
+    {
+        return new self(
+            'Akun Anda telah disetujui',
+            'Akun BeresinNews Anda sudah disetujui admin. Sekarang Anda bisa mengirim berita.',
+            route('dashboard'),
+            'Buka Dashboard',
         );
     }
 

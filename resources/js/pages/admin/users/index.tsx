@@ -1,4 +1,4 @@
-import { useForm } from '@inertiajs/react';
+import { router, useForm } from '@inertiajs/react';
 import type { FormEvent } from 'react';
 import { useState } from 'react';
 import ActionButton, { ActionGroup } from '@/components/admin/action-button';
@@ -23,7 +23,14 @@ import type { BadgeTone } from '@/components/admin/status-badge';
 import UserStatusBadge from '@/components/admin/user-status-badge';
 import Pagination from '@/components/news/pagination';
 import { primaryButton, textInput } from '@/lib/ui';
-import { destroy, index, store, update } from '@/routes/admin/users';
+import {
+    approve,
+    destroy,
+    index,
+    reject,
+    store,
+    update,
+} from '@/routes/admin/users';
 import type { RawPaginated } from '@/types';
 
 type UserRow = {
@@ -37,6 +44,7 @@ type UserRow = {
     job_title: string | null;
     bio: string | null;
     is_active: boolean;
+    is_pending: boolean;
     is_new: boolean;
     joined: string | null;
     joined_relative: string | null;
@@ -328,6 +336,7 @@ export default function AdminUsersIndex({ users, roles, filters }: UsersProps) {
                     value={filters.status}
                     allLabel="Semua Status"
                     options={[
+                        { value: 'menunggu', label: 'Menunggu Persetujuan' },
                         { value: 'aktif', label: 'Aktif' },
                         { value: 'nonaktif', label: 'Nonaktif' },
                     ]}
@@ -406,18 +415,45 @@ export default function AdminUsersIndex({ users, roles, filters }: UsersProps) {
                             <td className="px-4 py-3">
                                 <UserStatusBadge
                                     isActive={user.is_active}
+                                    isPending={user.is_pending}
                                     isNew={user.is_new}
                                 />
                             </td>
                             <td className="px-4 py-3">
                                 <ActionGroup>
+                                    {user.is_pending && (
+                                        <>
+                                            <ActionButton
+                                                label="Setujui pendaftaran"
+                                                icon="fa-user-check"
+                                                tone="success"
+                                                onClick={() =>
+                                                    router.post(
+                                                        approve.url(user.id),
+                                                        {},
+                                                        {
+                                                            preserveScroll: true,
+                                                        },
+                                                    )
+                                                }
+                                            />
+                                            <ConfirmButton
+                                                url={reject.url(user.id)}
+                                                method="post"
+                                                label="Tolak pendaftaran"
+                                                icon="fa-user-xmark"
+                                                title="Tolak pendaftaran?"
+                                                description="Akun ini dinonaktifkan dan tidak bisa masuk."
+                                            />
+                                        </>
+                                    )}
                                     <ActionButton
                                         label="Edit pengguna"
                                         icon="fa-pen-to-square"
                                         tone="primary"
                                         onClick={() => setEditing(user)}
                                     />
-                                    {user.is_active && (
+                                    {user.is_active && !user.is_pending && (
                                         <ConfirmButton
                                             url={destroy.url(user.id)}
                                             label="Nonaktifkan pengguna"

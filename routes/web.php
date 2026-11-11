@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Dashboard\DashboardController;
 use App\Http\Controllers\Dashboard\NotificationController;
+use App\Http\Controllers\Dashboard\PendingApprovalController;
 use App\Http\Controllers\Dashboard\SubmissionController;
 use App\Http\Controllers\Public\ArticleController;
 use App\Http\Controllers\Public\ArticleLikeController;
@@ -63,7 +64,7 @@ Route::post('kontak', [ContactController::class, 'store'])->middleware('throttle
 
 Route::post('midtrans/notifikasi', MidtransWebhookController::class)->middleware('throttle:120,1')->name('midtrans.notification');
 
-Route::middleware(['auth', 'verified'])->group(function () {
+Route::middleware(['auth', 'approved'])->group(function () {
     Route::get('dashboard', DashboardController::class)->name('dashboard');
     Route::get('sesi/perpanjang', fn () => response()->noContent())->middleware('throttle:30,1')->name('session.keep-alive');
 
@@ -80,6 +81,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 });
 
 Route::middleware('auth')->group(function () {
+    Route::get('akun/menunggu-persetujuan', PendingApprovalController::class)->name('account.pending');
     Route::get('notifikasi', [NotificationController::class, 'index'])->name('notifications.index');
     Route::post('notifikasi/baca-semua', [NotificationController::class, 'readAll'])->name('notifications.read-all');
     Route::get('notifikasi/{notification}/buka', [NotificationController::class, 'open'])->name('notifications.open');

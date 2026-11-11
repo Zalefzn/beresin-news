@@ -2,11 +2,13 @@ import StatusBadge from '@/components/admin/status-badge';
 
 type UserStatusBadgeProps = {
     isActive: boolean;
+    isPending?: boolean;
     isNew: boolean;
 };
 
 export default function UserStatusBadge({
     isActive,
+    isPending = false,
     isNew,
 }: UserStatusBadgeProps) {
     return (
@@ -16,12 +18,18 @@ export default function UserStatusBadge({
                     Baru
                 </StatusBadge>
             )}
-            <StatusBadge
-                tone={isActive ? 'emerald' : 'slate'}
-                icon={isActive ? 'fa-circle-check' : 'fa-circle-minus'}
-            >
-                {isActive ? 'Aktif' : 'Nonaktif'}
-            </StatusBadge>
+            {isPending ? (
+                <StatusBadge tone="amber" icon="fa-hourglass-half">
+                    Menunggu Persetujuan
+                </StatusBadge>
+            ) : (
+                <StatusBadge
+                    tone={isActive ? 'emerald' : 'slate'}
+                    icon={isActive ? 'fa-circle-check' : 'fa-circle-minus'}
+                >
+                    {isActive ? 'Aktif' : 'Nonaktif'}
+                </StatusBadge>
+            )}
         </span>
     );
 }

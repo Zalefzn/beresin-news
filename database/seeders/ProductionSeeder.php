@@ -51,6 +51,7 @@ class ProductionSeeder extends Seeder
         $admin->forceFill([
             'role' => UserRole::Admin,
             'email_verified_at' => $admin->email_verified_at ?? now(),
+            'approved_at' => $admin->approved_at ?? now(),
             'remember_token' => Str::random(10),
         ])->save();
     }

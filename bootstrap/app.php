@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\EnsureAccountIsActive;
+use App\Http\Middleware\EnsureAccountIsApproved;
 use App\Http\Middleware\EnsureNewsroomAccess;
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
@@ -40,7 +41,7 @@ return Application::configure(basePath: dirname(__DIR__))
             AddLinkHeadersForPreloadedAssets::class,
         ]);
 
-        $middleware->alias(['newsroom' => EnsureNewsroomAccess::class]);
+        $middleware->alias(['newsroom' => EnsureNewsroomAccess::class, 'approved' => EnsureAccountIsApproved::class]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

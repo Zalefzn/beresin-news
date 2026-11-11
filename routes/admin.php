@@ -14,7 +14,7 @@ use App\Http\Controllers\Admin\TagController;
 use App\Http\Controllers\Admin\UserController;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware(['auth', 'verified', 'newsroom'])->prefix('admin')->name('admin.')->group(function () {
+Route::middleware(['auth', 'approved', 'newsroom'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/', DashboardController::class)->name('dashboard');
 
     Route::get('artikel', [ArticleController::class, 'index'])->name('articles.index');
@@ -69,6 +69,8 @@ Route::middleware(['auth', 'verified', 'newsroom'])->prefix('admin')->name('admi
     Route::post('pengguna', [UserController::class, 'store'])->name('users.store');
     Route::put('pengguna/{user}', [UserController::class, 'update'])->name('users.update');
     Route::delete('pengguna/{user}', [UserController::class, 'destroy'])->name('users.destroy');
+    Route::post('pengguna/{user}/setujui', [UserController::class, 'approve'])->name('users.approve');
+    Route::post('pengguna/{user}/tolak', [UserController::class, 'reject'])->name('users.reject');
 
     Route::get('pengaturan', [SettingController::class, 'edit'])->name('settings.edit');
     Route::put('pengaturan', [SettingController::class, 'update'])->name('settings.update');

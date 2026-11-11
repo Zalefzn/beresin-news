@@ -18,6 +18,7 @@ type ConfirmButtonProps = {
     description?: string;
     icon?: string;
     tone?: ActionTone;
+    method?: 'delete' | 'post';
 };
 
 /** Icon-only destructive action guarded by a confirmation dialog. */
@@ -28,12 +29,14 @@ export default function ConfirmButton({
     description = 'Tindakan ini tidak dapat dibatalkan.',
     icon = 'fa-trash-can',
     tone = 'danger',
+    method = 'delete',
 }: ConfirmButtonProps) {
     const [isOpen, setIsOpen] = useState(false);
     const [isProcessing, setIsProcessing] = useState(false);
 
     const confirm = (): void => {
-        router.delete(url, {
+        router.visit(url, {
+            method,
             preserveScroll: true,
             onStart: () => setIsProcessing(true),
             onFinish: () => {

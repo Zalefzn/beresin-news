@@ -8,6 +8,7 @@ use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\SaveUserRequest;
 use App\Models\User;
+use App\Notifications\SubmissionNotification;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -27,7 +28,13 @@ class UserController extends Controller
                     $query->where(fn ($inner) => $inner->whereLike('name', $term)->orWhereLike('email', $term));
                 })
                 ->when($request->filled('peran'), fn ($query) => $query->where('role', $request->string('peran')->toString()))
-                ->when($request->filled('status'), fn ($query) => $query->where('is_active', $request->string('status')->toString() === 'aktif'))
+                ->when($request->filled('status'), function ($query) use ($request): void {
+                    match ($request->string('status')->toString()) {
+                        'menunggu' => $query->whereNull('approved_at')->where('role', UserRole::Reader)->where('is_active', true),
+                        'aktif' => $query->where('is_active', true),
+                        default => $query->where('is_active', false),
+                    };
+                })
                 ->latest('created_at')
                 ->latest('id')
                 ->paginate(20)
@@ -43,6 +50,7 @@ class UserController extends Controller
                     'job_title' => $user->job_title,
                     'bio' => $user->bio,
                     'is_active' => $user->is_active,
+                    'is_pending' => $user->is_active && ! $user->isApproved(),
                     'is_new' => $user->created_at?->gte(now()->subDay()) ?? false,
                     'joined' => $user->created_at?->translatedFormat('j M Y, H:i'),
                     'joined_relative' => $user->created_at?->diffForHumans(),
@@ -61,7 +69,7 @@ class UserController extends Controller
 
         $user = new User(collect($data)->except('role')->all());
         $user->role = UserRole::from((string) $data['role']);
-        $user->forceFill(['email_verified_at' => now()]);
+        $user->forceFill(['email_verified_at' => now(), 'approved_at' => now()]);
         $user->save();
 
         Inertia::flash('success', 'Pengguna berhasil ditambahkan.');
@@ -94,6 +102,47 @@ class UserController extends Controller
         $user->save();
 
         Inertia::flash('success', 'Pengguna berhasil diperbarui.');
+
+        return back();
+    }
+
+    /**
+     * Lets a self-registered reader into the dashboard and the paid news submission.
+     */
+    public function approve(User $user): RedirectResponse
+    {
+        Gate::authorize('manage', User::class);
+
+        if ($user->isApproved()) {
+            Inertia::flash('error', 'Akun ini sudah disetujui.');
+
+            return back();
+        }
+
+        $user->forceFill(['approved_at' => now(), 'is_active' => true])->save();
+        $user->notify(SubmissionNotification::accountApproved());
+
+        Inertia::flash('success', "Akun {$user->name} disetujui.");
+
+        return back();
+    }
+
+    /**
+     * A rejected sign-up is deactivated, not deleted, so the same email cannot simply register again.
+     */
+    public function reject(User $user): RedirectResponse
+    {
+        Gate::authorize('manage', User::class);
+
+        if ($user->isApproved()) {
+            Inertia::flash('error', 'Akun yang sudah disetujui tidak bisa ditolak. Nonaktifkan bila perlu.');
+
+            return back();
+        }
+
+        $user->update(['is_active' => false]);
+
+        Inertia::flash('success', "Pendaftaran {$user->name} ditolak.");
 
         return back();
     }

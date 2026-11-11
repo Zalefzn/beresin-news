@@ -16,7 +16,7 @@ class SubmitComment
      */
     public function handle(Article $article, array $data, ?User $user, ?string $ipAddress): Comment
     {
-        $isTrusted = $user !== null && $user->hasVerifiedEmail();
+        $isTrusted = $user !== null && $user->isApproved();
 
         $comment = $article->comments()->create([
             'user_id' => $user?->id,

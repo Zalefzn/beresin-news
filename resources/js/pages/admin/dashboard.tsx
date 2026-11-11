@@ -28,6 +28,7 @@ type LatestUser = {
     email: string;
     role_label: string;
     is_active: boolean;
+    is_pending: boolean;
     is_new: boolean;
     joined: string | null;
     joined_at: string | null;
@@ -231,6 +232,7 @@ function LatestUsersDialog({
                                 </div>
                                 <UserStatusBadge
                                     isActive={user.is_active}
+                                    isPending={user.is_pending}
                                     isNew={user.is_new}
                                 />
                             </li>

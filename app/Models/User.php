@@ -6,7 +6,6 @@ namespace App\Models;
 
 use App\Enums\UserRole;
 use Database\Factories\UserFactory;
-use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -34,6 +33,7 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property string|null $bio
  * @property array<string, string>|null $social
  * @property bool $is_active
+ * @property Carbon|null $approved_at
  * @property Carbon|null $chat_blocked_at
  * @property string|null $two_factor_secret
  * @property string|null $two_factor_recovery_codes
@@ -44,7 +44,7 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  */
 #[Fillable(['name', 'slug', 'email', 'password', 'avatar', 'job_title', 'bio', 'social', 'is_active'])]
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
-class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
+class User extends Authenticatable implements PasskeyUser
 {
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable, PasskeyAuthenticatable, TwoFactorAuthenticatable;
@@ -69,6 +69,7 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
             'role' => UserRole::class,
             'social' => 'array',
             'is_active' => 'boolean',
+            'approved_at' => 'datetime',
             'chat_blocked_at' => 'datetime',
         ];
     }
@@ -93,6 +94,14 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
     public function canManageNewsroom(): bool
     {
         return $this->role->canManageNewsroom();
+    }
+
+    /**
+     * Newsroom staff are created by an admin, so only self-registered readers wait for approval.
+     */
+    public function isApproved(): bool
+    {
+        return $this->approved_at !== null || $this->canAccessNewsroom();
     }
 
     public function isAdmin(): bool

@@ -60,12 +60,12 @@ function paidSubmission(User $author, ArticleStatus $status = ArticleStatus::Rev
     return $article;
 }
 
-test('guests and unverified users cannot submit news', function () {
+test('guests and readers awaiting approval cannot submit news', function () {
     $this->get(route('submissions.create'))->assertRedirect(route('login'));
 
-    $this->actingAs(User::factory()->unverified()->create())
+    $this->actingAs(User::factory()->pendingApproval()->create())
         ->get(route('submissions.create'))
-        ->assertRedirect(route('verification.notice'));
+        ->assertRedirect(route('account.pending'));
 });
 
 test('newsroom staff are sent to the free article form instead of the paid packages', function () {
