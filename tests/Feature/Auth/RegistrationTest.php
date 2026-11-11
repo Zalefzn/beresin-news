@@ -1,5 +1,7 @@
 <?php
 
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rules\Password;
 use Laravel\Fortify\Features;
 
 beforeEach(function () {
@@ -22,4 +24,19 @@ test('new users can register', function () {
 
     $this->assertAuthenticated();
     $response->assertRedirect(route('dashboard', absolute: false));
+});
+
+test('production accepts any password of at least eight characters', function () {
+    app()->detectEnvironment(fn () => 'production');
+
+    expect(Validator::make(['password' => 'password'], ['password' => Password::defaults()])->passes())->toBeTrue();
+});
+
+test('passwords shorter than eight characters are rejected', function () {
+    $this->post(route('register.store'), [
+        'name' => 'Pembaca Pendek',
+        'email' => 'pendek@example.com',
+        'password' => 'pass',
+        'password_confirmation' => 'pass',
+    ])->assertSessionHasErrors('password');
 });
