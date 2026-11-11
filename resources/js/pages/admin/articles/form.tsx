@@ -452,7 +452,12 @@ export default function AdminArticleForm({
                             id="tags"
                             icon="fa-hashtag"
                             label="Tag"
-                            error={errors.tags}
+                            error={
+                                errors.tags ??
+                                Object.entries(errors).find(([key]) =>
+                                    key.startsWith('tags.'),
+                                )?.[1]
+                            }
                             hint="Pisahkan dengan koma. Tag baru otomatis dibuat."
                         >
                             <input

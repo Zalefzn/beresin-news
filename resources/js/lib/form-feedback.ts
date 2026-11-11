@@ -10,7 +10,10 @@ export const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
 export function notifyFormErrors(errors: Record<string, string>): void {
     const [firstKey] = Object.keys(errors);
 
-    toast.error('Artikel belum tersimpan. Periksa kolom yang ditandai merah.');
+    // Naming the reason keeps the message useful when the invalid field is off screen or has no red label.
+    toast.error('Artikel belum tersimpan.', {
+        description: firstKey ? errors[firstKey] : undefined,
+    });
 
     if (!firstKey) {
         return;
