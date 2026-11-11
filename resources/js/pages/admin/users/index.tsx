@@ -1,4 +1,4 @@
-import { router, useForm } from '@inertiajs/react';
+import { router, useForm, usePage } from '@inertiajs/react';
 import type { FormEvent } from 'react';
 import { useState } from 'react';
 import ActionButton, { ActionGroup } from '@/components/admin/action-button';
@@ -26,12 +26,13 @@ import { primaryButton, textInput } from '@/lib/ui';
 import {
     approve,
     destroy,
+    forceDestroy,
     index,
     reject,
     store,
     update,
 } from '@/routes/admin/users';
-import type { RawPaginated } from '@/types';
+import type { Auth, RawPaginated } from '@/types';
 
 type UserRow = {
     id: number;
@@ -287,6 +288,7 @@ type UsersProps = {
 
 export default function AdminUsersIndex({ users, roles, filters }: UsersProps) {
     const [editing, setEditing] = useState<UserRow | 'new' | null>(null);
+    const currentUserId = usePage<{ auth: Auth }>().props.auth.user?.id;
     const { apply, reset, activeCount } = useFilters(index.url(), filters);
 
     return (
@@ -460,6 +462,14 @@ export default function AdminUsersIndex({ users, roles, filters }: UsersProps) {
                                             icon="fa-user-slash"
                                             title="Nonaktifkan pengguna?"
                                             description="Pengguna tidak bisa masuk lagi. Riwayat artikelnya tetap tersimpan."
+                                        />
+                                    )}
+                                    {user.id !== currentUserId && (
+                                        <ConfirmButton
+                                            url={forceDestroy.url(user.id)}
+                                            label="Hapus pengguna"
+                                            title={`Hapus ${user.name} permanen?`}
+                                            description="Akun dan datanya dihapus selamanya dan tidak bisa dibatalkan. Pengguna yang punya artikel atau riwayat pembayaran tidak bisa dihapus, nonaktifkan saja."
                                         />
                                     )}
                                 </ActionGroup>

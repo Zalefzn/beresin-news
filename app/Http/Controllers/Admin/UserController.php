@@ -7,10 +7,12 @@ namespace App\Http\Controllers\Admin;
 use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\SaveUserRequest;
+use App\Models\ArticleOrder;
 use App\Models\User;
 use App\Notifications\SubmissionNotification;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -163,6 +165,37 @@ class UserController extends Controller
         $user->update(['is_active' => false]);
 
         Inertia::flash('success', 'Pengguna dinonaktifkan.');
+
+        return back();
+    }
+
+    /**
+     * Permanently removes an account. Authors and anyone with a payment record are refused,
+     * so published work and Midtrans history are never lost; those can only be deactivated.
+     */
+    public function forceDestroy(Request $request, User $user): RedirectResponse
+    {
+        Gate::authorize('manage', User::class);
+
+        if ($user->is($request->user())) {
+            Inertia::flash('error', 'Anda tidak dapat menghapus akun sendiri.');
+
+            return back();
+        }
+
+        if ($user->articles()->withTrashed()->exists() || ArticleOrder::query()->where('user_id', $user->id)->exists()) {
+            Inertia::flash('error', "{$user->name} punya artikel atau riwayat pembayaran, jadi tidak bisa dihapus. Nonaktifkan saja.");
+
+            return back();
+        }
+
+        DB::transaction(function () use ($user): void {
+            $user->notifications()->delete();
+            DB::table('sessions')->where('user_id', $user->id)->delete();
+            $user->delete();
+        });
+
+        Inertia::flash('success', "Pengguna {$user->name} dihapus permanen.");
 
         return back();
     }

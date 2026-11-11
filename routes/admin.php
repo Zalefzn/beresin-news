@@ -69,6 +69,7 @@ Route::middleware(['auth', 'approved', 'newsroom'])->prefix('admin')->name('admi
     Route::post('pengguna', [UserController::class, 'store'])->name('users.store');
     Route::put('pengguna/{user}', [UserController::class, 'update'])->name('users.update');
     Route::delete('pengguna/{user}', [UserController::class, 'destroy'])->name('users.destroy');
+    Route::delete('pengguna/{user}/permanen', [UserController::class, 'forceDestroy'])->name('users.force-destroy');
     Route::post('pengguna/{user}/setujui', [UserController::class, 'approve'])->name('users.approve');
     Route::post('pengguna/{user}/tolak', [UserController::class, 'reject'])->name('users.reject');
 

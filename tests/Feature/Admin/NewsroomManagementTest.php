@@ -6,6 +6,7 @@ use App\Enums\CommentStatus;
 use App\Enums\UserRole;
 use App\Jobs\SendNewsletterIssue;
 use App\Models\Article;
+use App\Models\ArticleOrder;
 use App\Models\BreakingNews;
 use App\Models\Category;
 use App\Models\Comment;
@@ -190,4 +191,31 @@ test('the analytics code rejects anything but a measurement id', function () {
         'weather_temp' => '29°C',
         'analytics_code' => '</script><script>steal()</script>',
     ])->assertSessionHasErrors('analytics_code');
+});
+
+test('admins permanently delete a user without articles or payments', function () {
+    $admin = User::factory()->admin()->create();
+    $reader = User::factory()->create();
+    $reader->bookmarkedArticles()->attach(Article::factory()->create());
+
+    $this->actingAs($admin)->delete(route('admin.users.force-destroy', $reader))->assertRedirect();
+
+    expect(User::query()->find($reader->id))->toBeNull();
+});
+
+test('authors, paying users and the admin themselves cannot be deleted', function () {
+    $admin = User::factory()->admin()->create();
+    $author = User::factory()->writer()->create();
+    Article::factory()->create(['author_id' => $author->id]);
+    $payer = User::factory()->create();
+    ArticleOrder::factory()->create(['user_id' => $payer->id]);
+
+    foreach ([$author, $payer, $admin] as $user) {
+        $this->actingAs($admin)->delete(route('admin.users.force-destroy', $user))->assertRedirect();
+        expect(User::query()->find($user->id))->not->toBeNull();
+    }
+
+    $this->actingAs(User::factory()->editor()->create())
+        ->delete(route('admin.users.force-destroy', User::factory()->create()))
+        ->assertForbidden();
 });
