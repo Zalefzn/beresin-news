@@ -10,7 +10,7 @@ use App\Notifications\SubmissionNotification;
 use Illuminate\Support\Facades\Notification;
 use Inertia\Testing\AssertableInertia as Assert;
 
-test('a new sign-up waits for approval without an email verification step', function () {
+test('a new sign-up can use the account right away without admin approval', function () {
     Notification::fake();
     $admin = User::factory()->admin()->create();
 
@@ -23,13 +23,19 @@ test('a new sign-up waits for approval without an email verification step', func
 
     $user = User::query()->where('email', 'baru@example.com')->firstOrFail();
 
-    expect($user->approved_at)->toBeNull();
-    Notification::assertSentTo($admin, SubmissionNotification::class, fn (SubmissionNotification $notification) => $notification->title === 'Pendaftar baru menunggu persetujuan');
+    expect($user->approved_at)->not->toBeNull();
+    Notification::assertNotSentTo($admin, SubmissionNotification::class);
 
-    $this->get(route('dashboard'))->assertRedirect(route('account.pending'));
-    $this->get(route('account.pending'))->assertInertia(fn (Assert $page) => $page
-        ->component('auth/pending-approval')
-        ->where('email', 'baru@example.com'));
+    $this->get(route('dashboard'))->assertOk();
+    $this->get(route('submissions.create'))->assertOk();
+});
+
+test('a reader still waiting for approval sees the waiting page', function () {
+    $this->actingAs(User::factory()->pendingApproval()->create(['email' => 'lama@example.com']))
+        ->get(route('account.pending'))
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('auth/pending-approval')
+            ->where('email', 'lama@example.com'));
 });
 
 test('an approved reader skips the waiting page', function () {

@@ -19,6 +19,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -138,22 +139,59 @@ class ArticleController extends Controller
         ]);
     }
 
+    /**
+     * NewsArticle and BreadcrumbList data so Google can list the story in Top Stories and search results.
+     */
     private function jsonLd(Article $article): string
     {
+        $articleUrl = $article->url();
+        $categoryUrl = route('categories.show', $article->category->slug);
+        $author = $article->author;
+
         return (string) json_encode([
             '@context' => 'https://schema.org',
-            '@type' => 'NewsArticle',
-            'headline' => $article->title,
-            'image' => array_filter([$article->coverUrl('hero')]),
-            'datePublished' => $article->published_at?->toIso8601String(),
-            'dateModified' => $article->updated_at?->toIso8601String(),
-            'author' => ['@type' => 'Person', 'name' => $article->author->name],
-            'publisher' => [
-                '@type' => 'Organization',
-                'name' => config('app.name'),
-                'logo' => ['@type' => 'ImageObject', 'url' => url('/logo.png')],
+            '@graph' => [
+                array_filter([
+                    '@type' => 'NewsArticle',
+                    '@id' => $articleUrl.'#article',
+                    'headline' => Str::limit($article->title, 110, ''),
+                    'description' => $article->meta_description ?? $article->excerpt,
+                    'image' => array_values(array_unique(array_filter([
+                        $article->coverUrl('hero'),
+                        $article->coverUrl('card'),
+                        $article->coverUrl('thumb'),
+                    ]))),
+                    'datePublished' => $article->published_at?->toIso8601String(),
+                    'dateModified' => ($article->updated_at ?? $article->published_at)?->toIso8601String(),
+                    'author' => array_filter([
+                        '@type' => 'Person',
+                        'name' => $author->name,
+                        'url' => $author->slug ? route('authors.show', $author->slug) : null,
+                        'jobTitle' => $author->job_title,
+                    ]),
+                    'publisher' => [
+                        '@type' => 'NewsMediaOrganization',
+                        '@id' => route('home').'#organization',
+                        'name' => config('app.name'),
+                        'url' => route('home'),
+                        'logo' => ['@type' => 'ImageObject', 'url' => url('/logo.png')],
+                    ],
+                    'mainEntityOfPage' => ['@type' => 'WebPage', '@id' => $articleUrl],
+                    'url' => $articleUrl,
+                    'articleSection' => $article->category->name,
+                    'keywords' => $article->tags->pluck('name')->implode(', ') ?: null,
+                    'inLanguage' => 'id-ID',
+                    'isAccessibleForFree' => true,
+                ]),
+                [
+                    '@type' => 'BreadcrumbList',
+                    'itemListElement' => [
+                        ['@type' => 'ListItem', 'position' => 1, 'name' => 'Beranda', 'item' => route('home')],
+                        ['@type' => 'ListItem', 'position' => 2, 'name' => $article->category->name, 'item' => $categoryUrl],
+                        ['@type' => 'ListItem', 'position' => 3, 'name' => $article->title, 'item' => $articleUrl],
+                    ],
+                ],
             ],
-            'mainEntityOfPage' => $article->url(),
         ], JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     }
 

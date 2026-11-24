@@ -27,6 +27,29 @@ test('a published article renders with its details', function () {
         );
 });
 
+test('the article structured data describes the story and its breadcrumb for google', function () {
+    $article = Article::factory()->for(User::factory()->writer()->state(['slug' => 'penulis-uji']), 'author')->create(['title' => 'Judul Artikel', 'excerpt' => 'Ringkasan berita.']);
+    $article->tags()->create(['name' => 'Ekonomi Digital', 'slug' => 'ekonomi-digital']);
+
+    $this->get($article->url())->assertInertia(function (Assert $page) use ($article): void {
+        [$news, $breadcrumb] = json_decode($page->toArray()['props']['jsonLd'], true)['@graph'];
+
+        expect($news)
+            ->toMatchArray([
+                '@type' => 'NewsArticle',
+                'headline' => 'Judul Artikel',
+                'description' => 'Ringkasan berita.',
+                'articleSection' => $article->category->name,
+                'keywords' => 'Ekonomi Digital',
+                'inLanguage' => 'id-ID',
+                'url' => $article->url(),
+            ])
+            ->and($news['author']['url'])->toBe(route('authors.show', $article->author->slug))
+            ->and($breadcrumb['@type'])->toBe('BreadcrumbList')
+            ->and($breadcrumb['itemListElement'][2]['item'])->toBe($article->url());
+    });
+});
+
 test('draft, scheduled, review and deleted articles are not public', function (Article $article) {
     $this->get(route('articles.show', ['category' => $article->category->slug, 'article' => $article->slug]))->assertNotFound();
 })->with([

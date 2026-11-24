@@ -58,12 +58,18 @@ class FeedController extends Controller
         Tag::query()->get()->each(fn (Tag $tag) => $sitemap->add(Url::create(route('tags.show', $tag->slug))));
         Page::query()->get()->each(fn (Page $page) => $sitemap->add(Url::create(route('pages.show', $page->slug))));
 
-        Article::query()->published()->with('category')->latest('published_at')->limit(5000)->get()
+        Article::query()->published()->with(['category', 'media'])->latest('published_at')->limit(5000)->get()
             ->each(function (Article $article) use ($sitemap): void {
                 $tag = Url::create($article->url());
 
                 if ($article->updated_at !== null) {
                     $tag->setLastModificationDate($article->updated_at);
+                }
+
+                $cover = $article->coverUrl('hero');
+
+                if ($cover !== null) {
+                    $tag->addImage($cover, $article->cover_caption ?? '', '', $article->title);
                 }
 
                 $sitemap->add($tag);

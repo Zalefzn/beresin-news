@@ -82,7 +82,9 @@ export default function ArticleShow({
                 canonical={article.url}
                 noindex={isPreview}
                 publishedTime={article.published_at}
+                modifiedTime={article.updated_at}
                 section={article.category.name}
+                tags={article.tags.map((tag) => tag.name)}
             />
             {!isPreview && (
                 <script
