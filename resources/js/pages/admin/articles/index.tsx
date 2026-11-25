@@ -31,6 +31,7 @@ type Row = {
     status_label: string;
     published_label: string | null;
     package_label: string | null;
+    sponsor_label: string | null;
     views_count: number;
     preview_url: string;
     can_update: boolean;
@@ -109,6 +110,18 @@ export default function AdminArticlesIndex({
                     }))}
                     onChange={(value) => apply('kategori', value)}
                 />
+                <SelectFilter
+                    id="filter-iklan"
+                    label="Iklan"
+                    icon="fa-bullhorn"
+                    value={filters.iklan}
+                    allLabel="Semua Artikel"
+                    options={[
+                        { value: 'tayang', label: 'Iklan sedang tayang' },
+                        { value: 'semua', label: 'Semua iklan' },
+                    ]}
+                    onChange={(value) => apply('iklan', value)}
+                />
                 {authors.length > 0 && (
                     <SelectFilter
                         id="filter-penulis"
@@ -176,6 +189,15 @@ export default function AdminArticlesIndex({
                                                         aria-hidden="true"
                                                     />
                                                     {article.package_label}
+                                                </span>
+                                            )}
+                                            {article.sponsor_label && (
+                                                <span className="ml-2 font-bold text-brand-blue dark:text-sky-400">
+                                                    <i
+                                                        className="fa-solid fa-bullhorn mr-1"
+                                                        aria-hidden="true"
+                                                    />
+                                                    {article.sponsor_label}
                                                 </span>
                                             )}
                                         </>

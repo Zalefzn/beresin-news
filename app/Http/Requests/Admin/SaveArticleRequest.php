@@ -39,6 +39,8 @@ class SaveArticleRequest extends FormRequest
             'is_headline' => ['boolean'],
             'is_trending' => ['boolean'],
             'is_breaking' => ['boolean'],
+            'is_sponsored' => ['boolean'],
+            'sponsored_until' => ['nullable', 'date_format:Y-m-d'],
             'status' => ['required', Rule::enum(ArticleStatus::class)],
             'published_at' => ['nullable', 'date', Rule::requiredIf($this->input('status') === ArticleStatus::Scheduled->value), Rule::when($this->input('status') === ArticleStatus::Scheduled->value, 'after:now')],
             'meta_title' => ['nullable', 'string', 'max:255'],
@@ -74,6 +76,7 @@ class SaveArticleRequest extends FormRequest
             'category_id' => 'kategori',
             'cover' => 'gambar sampul',
             'published_at' => 'jadwal terbit',
+            'sponsored_until' => 'tayang sampai',
         ];
     }
 

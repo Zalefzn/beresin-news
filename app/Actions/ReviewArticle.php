@@ -13,9 +13,21 @@ class ReviewArticle
 {
     public function __construct(private PublishArticle $publishArticle) {}
 
+    /**
+     * Publishes the story. A paid story also starts running as an ad, unless an admin already set up its run.
+     */
     public function approve(Article $article, User $admin): void
     {
-        $article->update(['rejection_reason' => null]);
+        $article->fill(['rejection_reason' => null]);
+
+        if ($article->package !== null && ! $article->is_sponsored && $article->sponsored_until === null) {
+            $article->fill([
+                'is_sponsored' => true,
+                'sponsored_until' => now()->addDays(Article::SPONSORED_DAYS),
+            ]);
+        }
+
+        $article->save();
         $this->publishArticle->handle($article, $admin);
 
         $article->loadMissing(['author', 'category']);

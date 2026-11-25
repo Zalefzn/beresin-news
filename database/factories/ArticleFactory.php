@@ -49,6 +49,11 @@ class ArticleFactory extends Factory
         return $this->state(['status' => ArticleStatus::Review, 'published_at' => null]);
     }
 
+    public function sponsored(?\DateTimeInterface $until = null): static
+    {
+        return $this->state(['is_sponsored' => true, 'sponsored_until' => $until]);
+    }
+
     public function headline(): static
     {
         return $this->state(['is_headline' => true]);

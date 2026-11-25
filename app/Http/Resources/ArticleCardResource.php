@@ -39,7 +39,7 @@ class ArticleCardResource extends JsonResource
             'published_label' => $this->published_at?->translatedFormat('j M Y'),
             'reading_time' => $this->reading_time,
             'views_count' => $this->views_count,
-            'paid_label' => $this->package?->publicLabel(),
+            'paid_label' => $this->paidLabel(),
         ];
     }
 }

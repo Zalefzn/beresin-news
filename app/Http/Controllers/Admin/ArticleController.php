@@ -18,6 +18,7 @@ use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
@@ -37,7 +38,7 @@ class ArticleController extends Controller
 
         /** @var User $user */
         $user = $request->user();
-        $filters = $request->only(['status', 'kategori', 'penulis', 'q']);
+        $filters = $request->only(['status', 'kategori', 'penulis', 'q', 'iklan']);
 
         $articles = Article::query()
             ->with(['category', 'author'])
@@ -46,6 +47,8 @@ class ArticleController extends Controller
             ->when($request->filled('kategori'), fn ($query) => $query->where('category_id', $request->integer('kategori')))
             ->when($request->filled('penulis'), fn ($query) => $query->where('author_id', $request->integer('penulis')))
             ->when($request->filled('q'), fn ($query) => $query->whereLike('title', '%'.$request->string('q')->toString().'%'))
+            ->when($request->string('iklan')->toString() === 'tayang', fn ($query) => $query->sponsored())
+            ->when($request->string('iklan')->toString() === 'semua', fn ($query) => $query->where('is_sponsored', true))
             ->latest('updated_at')
             ->paginate(self::PER_PAGE)
             ->withQueryString()
@@ -57,6 +60,13 @@ class ArticleController extends Controller
                 'status' => $article->status->value,
                 'status_label' => $article->status->label(),
                 'package_label' => $article->package?->label(),
+                'sponsor_label' => match (true) {
+                    $article->isSponsoredNow() => $article->sponsored_until
+                        ? 'Iklan s.d. '.$article->sponsored_until->translatedFormat('j M Y')
+                        : 'Iklan',
+                    $article->is_sponsored => 'Iklan selesai',
+                    default => null,
+                },
                 'published_label' => $article->published_at?->translatedFormat('j M Y, H:i'),
                 'views_count' => $article->views_count,
                 'preview_url' => route('articles.preview', $article->preview_token),
@@ -186,6 +196,10 @@ class ArticleController extends Controller
                 'is_headline' => (bool) ($data['is_headline'] ?? false),
                 'is_trending' => (bool) ($data['is_trending'] ?? false),
                 'is_breaking' => (bool) ($data['is_breaking'] ?? false),
+                'is_sponsored' => (bool) ($data['is_sponsored'] ?? false),
+                'sponsored_until' => filled($data['sponsored_until'] ?? null)
+                    ? Carbon::createFromFormat('Y-m-d', (string) $data['sponsored_until'])->endOfDay()
+                    : null,
                 'editor_id' => $status->requiresPublishPermission() ? $user->id : $article->editor_id,
             ]);
         }
@@ -248,6 +262,9 @@ class ArticleController extends Controller
                 'is_headline' => $article->is_headline,
                 'is_trending' => $article->is_trending,
                 'is_breaking' => $article->is_breaking,
+                'is_sponsored' => $article->is_sponsored,
+                'sponsored_until' => $article->sponsored_until?->format('Y-m-d'),
+                'package_label' => $article->package?->label(),
                 'status' => $article->status->value,
                 'published_at' => $article->published_at?->format('Y-m-d\TH:i'),
                 'meta_title' => $article->meta_title,

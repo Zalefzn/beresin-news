@@ -24,8 +24,7 @@ class GetSharedSiteData
 
     private const int BREAKING_TTL_SECONDS = 60;
 
-    /** Paid stories are promoted across the site for this many days after they go live. */
-    public const int SPONSORED_DAYS = 30;
+    private const int SPONSORED_LIMIT = 10;
 
     /** @var array<string, mixed> */
     private const array SETTING_DEFAULTS = [
@@ -135,7 +134,7 @@ class GetSharedSiteData
     }
 
     /**
-     * Paid stories (advertisers) published recently, shown under the Terpopuler list on public pages.
+     * Stories an admin runs as ads, shown under Topik Hangat and Terpopuler on public pages.
      *
      * @return array<int, array{id: int, title: string, excerpt: string|null, url: string, image: string|null, category: string, label: string}>
      */
@@ -143,11 +142,10 @@ class GetSharedSiteData
     {
         return $this->remember('sponsored_articles', self::BREAKING_TTL_SECONDS, fn (): array => Article::query()
             ->published()
-            ->whereNotNull('package')
-            ->where('published_at', '>=', now()->subDays(self::SPONSORED_DAYS))
+            ->sponsored()
             ->with(['category', 'media'])
             ->latest('published_at')
-            ->limit(5)
+            ->limit(self::SPONSORED_LIMIT)
             ->get()
             ->map(fn (Article $article): array => [
                 'id' => $article->id,
@@ -156,7 +154,7 @@ class GetSharedSiteData
                 'url' => $article->url(absolute: false),
                 'image' => $article->coverUrl('card'),
                 'category' => $article->category->name,
-                'label' => (string) $article->package?->publicLabel(),
+                'label' => (string) $article->paidLabel(),
             ])->all());
     }
 

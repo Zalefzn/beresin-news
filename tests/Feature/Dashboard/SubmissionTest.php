@@ -303,7 +303,9 @@ test('only the admin can approve, and approval publishes with a disclosure label
     $this->actingAs(User::factory()->admin()->create())->post(route('admin.reviews.approve', $article))->assertRedirect();
 
     $article->refresh();
-    expect($article->isPubliclyVisible())->toBeTrue();
+    expect($article->isPubliclyVisible())->toBeTrue()
+        ->and($article->isSponsoredNow())->toBeTrue()
+        ->and($article->sponsored_until->isSameDay(now()->addDays(Article::SPONSORED_DAYS)))->toBeTrue();
     Notification::assertSentTo($author, SubmissionNotification::class, fn ($notification) => $notification->title === 'Berita Anda telah terbit');
 
     $this->get($article->url())->assertInertia(fn (Assert $page) => $page->where('article.paid_label', 'Konten Berbayar'));

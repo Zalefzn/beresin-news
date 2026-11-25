@@ -45,6 +45,8 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
  * @property bool $is_headline
  * @property bool $is_trending
  * @property bool $is_breaking
+ * @property bool $is_sponsored
+ * @property Carbon|null $sponsored_until
  * @property int $reading_time
  * @property int $views_count
  * @property int $likes_count
@@ -61,7 +63,7 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
 #[Fillable([
     'title', 'slug', 'dateline', 'excerpt', 'body', 'cover_caption', 'cover_credit', 'category_id',
     'author_id', 'editor_id', 'status', 'package', 'rejection_reason', 'published_at', 'is_headline', 'is_trending', 'is_breaking',
-    'reading_time', 'views_count', 'likes_count', 'comments_count', 'meta_title', 'meta_description', 'preview_token',
+    'is_sponsored', 'sponsored_until', 'reading_time', 'views_count', 'likes_count', 'comments_count', 'meta_title', 'meta_description', 'preview_token',
 ])]
 class Article extends Model implements HasMedia
 {
@@ -69,6 +71,9 @@ class Article extends Model implements HasMedia
     use ClearsSiteCache, HasFactory, InteractsWithMedia, Searchable, SoftDeletes;
 
     private const int WORDS_PER_MINUTE = 200;
+
+    /** How long a paid story runs as an ad after an admin approves it, unless the admin changes it. */
+    public const int SPONSORED_DAYS = 30;
 
     protected static function booted(): void
     {
@@ -94,6 +99,8 @@ class Article extends Model implements HasMedia
             'is_headline' => 'boolean',
             'is_trending' => 'boolean',
             'is_breaking' => 'boolean',
+            'is_sponsored' => 'boolean',
+            'sponsored_until' => 'datetime',
         ];
     }
 
@@ -152,6 +159,32 @@ class Article extends Model implements HasMedia
     public function scopePublished(Builder $query): Builder
     {
         return $query->where('status', ArticleStatus::Published)->where('published_at', '<=', now());
+    }
+
+    /**
+     * Stories an admin marked as ads whose run has not ended.
+     *
+     * @param  Builder<Article>  $query
+     * @return Builder<Article>
+     */
+    public function scopeSponsored(Builder $query): Builder
+    {
+        return $query
+            ->where('is_sponsored', true)
+            ->where(fn (Builder $query) => $query->whereNull('sponsored_until')->orWhere('sponsored_until', '>=', now()));
+    }
+
+    /**
+     * The disclosure readers see on paid or sponsored stories, as the Dewan Pers guideline requires.
+     */
+    public function paidLabel(): ?string
+    {
+        return $this->package?->publicLabel() ?? ($this->is_sponsored ? 'Advertorial' : null);
+    }
+
+    public function isSponsoredNow(): bool
+    {
+        return $this->is_sponsored && ($this->sponsored_until === null || $this->sponsored_until->isFuture());
     }
 
     /**

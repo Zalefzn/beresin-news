@@ -31,6 +31,9 @@ type ArticleData = {
     is_headline: boolean;
     is_trending: boolean;
     is_breaking: boolean;
+    is_sponsored: boolean;
+    sponsored_until: string | null;
+    package_label: string | null;
     status: string;
     published_at: string | null;
     meta_title: string | null;
@@ -83,6 +86,8 @@ export default function AdminArticleForm({
         is_headline: article?.is_headline ?? false,
         is_trending: article?.is_trending ?? false,
         is_breaking: article?.is_breaking ?? false,
+        is_sponsored: article?.is_sponsored ?? false,
+        sponsored_until: article?.sponsored_until ?? '',
         status: article?.status ?? defaultStatus,
         published_at: article?.published_at ?? '',
         meta_title: article?.meta_title ?? '',
@@ -520,6 +525,47 @@ export default function AdminArticleForm({
                                         }
                                     />
                                 ))}
+                            </fieldset>
+                        )}
+                        {canFeature && (
+                            <fieldset className="space-y-2 border-t border-slate-100 pt-4 dark:border-slate-800">
+                                <legend className="sr-only">Iklan</legend>
+                                <SwitchField
+                                    id="is_sponsored"
+                                    label="Tampilkan sebagai Iklan"
+                                    description={
+                                        article?.package_label
+                                            ? `Naskah berbayar (${article.package_label}). Tampil di kotak iklan bawah Topik Hangat & Terpopuler.`
+                                            : 'Tampil di kotak iklan bawah Topik Hangat & Terpopuler, berlabel Advertorial.'
+                                    }
+                                    icon="fa-bullhorn"
+                                    checked={data.is_sponsored}
+                                    onChange={(checked) =>
+                                        setData('is_sponsored', checked)
+                                    }
+                                />
+                                {data.is_sponsored && (
+                                    <Field
+                                        id="sponsored_until"
+                                        icon="fa-calendar-xmark"
+                                        label="Tayang Sampai"
+                                        error={errors.sponsored_until}
+                                        hint="Iklan berhenti otomatis setelah tanggal ini. Kosongkan agar tayang terus."
+                                    >
+                                        <input
+                                            id="sponsored_until"
+                                            type="date"
+                                            value={data.sponsored_until}
+                                            onChange={(event) =>
+                                                setData(
+                                                    'sponsored_until',
+                                                    event.target.value,
+                                                )
+                                            }
+                                            className={textInput}
+                                        />
+                                    </Field>
+                                )}
                             </fieldset>
                         )}
                     </div>
