@@ -1,5 +1,6 @@
 import { Link } from '@inertiajs/react';
 import ArticleImage from '@/components/news/article-image';
+import SponsoredCard from '@/components/news/sponsored-card';
 import type { ArticleCard } from '@/types';
 
 export default function HeroSubList({ articles }: { articles: ArticleCard[] }) {
@@ -51,6 +52,7 @@ export default function HeroSubList({ articles }: { articles: ArticleCard[] }) {
                     ))}
                 </div>
             </div>
+            <SponsoredCard offset={1} variant="compact" />
         </div>
     );
 }

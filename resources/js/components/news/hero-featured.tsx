@@ -9,7 +9,7 @@ export default function HeroFeatured({ article }: { article: ArticleCard }) {
             href={article.url}
             className="group flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:shadow-xl lg:col-span-8 dark:border-slate-800 dark:bg-slate-900"
         >
-            <div className="relative aspect-video min-h-80 w-full overflow-hidden bg-slate-900 sm:aspect-[21/9] sm:min-h-0 lg:aspect-video">
+            <div className="relative aspect-video min-h-80 w-full overflow-hidden bg-slate-900 sm:aspect-[21/9] sm:min-h-0 lg:aspect-video lg:grow">
                 <ArticleImage
                     src={article.image_hero}
                     srcSet={article.srcset}
