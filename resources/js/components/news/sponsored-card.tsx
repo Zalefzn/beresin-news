@@ -2,14 +2,16 @@ import { Link, usePage } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
 
 /** Shared across page visits so every new page shows the next advertiser. */
-let nextAdIndex: number | null = null;
+let currentAdIndex: number | null = null;
+let lastPageUrl: string | null = null;
 
 /**
  * Advertisers' paid stories, shown under the Terpopuler list. Each page visit shows
  * the next ad in turn, so readers see a fresh one whenever they move to another page.
  */
 export default function SponsoredCard() {
-    const ads = usePage().props.sponsoredArticles;
+    const { props, url } = usePage();
+    const ads = props.sponsoredArticles;
     const [index, setIndex] = useState(0);
 
     useEffect(() => {
@@ -17,13 +19,17 @@ export default function SponsoredCard() {
             return;
         }
 
-        if (nextAdIndex === null) {
-            nextAdIndex = Math.floor(Math.random() * ads.length);
+        // Advance only on a real page change, so re-running the effect never skips an ad.
+        if (url !== lastPageUrl) {
+            lastPageUrl = url;
+            currentAdIndex =
+                currentAdIndex === null
+                    ? Math.floor(Math.random() * ads.length)
+                    : currentAdIndex + 1;
         }
 
-        setIndex(nextAdIndex % ads.length);
-        nextAdIndex += 1;
-    }, [ads.length]);
+        setIndex((currentAdIndex ?? 0) % ads.length);
+    }, [url, ads.length]);
 
     const ad = ads[index] ?? ads[0];
 
