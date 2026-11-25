@@ -3,6 +3,7 @@ import ArticleImage from '@/components/news/article-image';
 import EmptyState from '@/components/news/empty-state';
 import NewsCard from '@/components/news/news-card';
 import PopularList from '@/components/news/popular-list';
+import SponsoredCard from '@/components/news/sponsored-card';
 import SeoHead from '@/components/news/seo-head';
 import NewsletterCard from '@/components/newsletter/newsletter-card';
 import { secondaryButton } from '@/lib/ui';
@@ -152,6 +153,7 @@ export default function CategoryShow({
 
                 <aside className="space-y-6 lg:col-span-4">
                     <PopularList articles={popular} badge="HOT 7 HARI" />
+                    <SponsoredCard />
                     <NewsletterCard />
                 </aside>
             </div>

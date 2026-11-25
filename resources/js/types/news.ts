@@ -115,6 +115,16 @@ export type BreakingItem = {
     url: string | null;
 };
 
+export type SponsoredArticle = {
+    id: number;
+    title: string;
+    excerpt: string | null;
+    url: string;
+    image: string | null;
+    category: string;
+    label: string;
+};
+
 export type SiteSettings = {
     name: string;
     weatherCity: string;

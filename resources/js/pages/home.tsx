@@ -6,6 +6,7 @@ import HeroFeatured from '@/components/news/hero-featured';
 import HeroSubList from '@/components/news/hero-sub-list';
 import NewsCard from '@/components/news/news-card';
 import PopularList from '@/components/news/popular-list';
+import SponsoredCard from '@/components/news/sponsored-card';
 import SectionHeader from '@/components/news/section-header';
 import SeoHead from '@/components/news/seo-head';
 import NewsletterCard from '@/components/newsletter/newsletter-card';
@@ -208,6 +209,7 @@ export default function Home({
                     </div>
                     <aside className="space-y-6 lg:col-span-4">
                         <PopularList articles={popular} />
+                        <SponsoredCard />
                         <NewsletterCard />
                     </aside>
                 </div>

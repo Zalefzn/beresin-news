@@ -24,6 +24,9 @@ class GetSharedSiteData
 
     private const int BREAKING_TTL_SECONDS = 60;
 
+    /** Paid stories are promoted across the site for this many days after they go live. */
+    public const int SPONSORED_DAYS = 30;
+
     /** @var array<string, mixed> */
     private const array SETTING_DEFAULTS = [
         'site_name' => 'BeresinNews',
@@ -129,6 +132,32 @@ class GetSharedSiteData
                 ->values()
                 ->all();
         });
+    }
+
+    /**
+     * Paid stories (advertisers) published recently, shown under the Terpopuler list on public pages.
+     *
+     * @return array<int, array{id: int, title: string, excerpt: string|null, url: string, image: string|null, category: string, label: string}>
+     */
+    public function sponsoredArticles(): array
+    {
+        return $this->remember('sponsored_articles', self::BREAKING_TTL_SECONDS, fn (): array => Article::query()
+            ->published()
+            ->whereNotNull('package')
+            ->where('published_at', '>=', now()->subDays(self::SPONSORED_DAYS))
+            ->with(['category', 'media'])
+            ->latest('published_at')
+            ->limit(5)
+            ->get()
+            ->map(fn (Article $article): array => [
+                'id' => $article->id,
+                'title' => $article->title,
+                'excerpt' => $article->excerpt,
+                'url' => $article->url(absolute: false),
+                'image' => $article->coverUrl('card'),
+                'category' => $article->category->name,
+                'label' => (string) $article->package?->publicLabel(),
+            ])->all());
     }
 
     /** @return array<string, mixed> */

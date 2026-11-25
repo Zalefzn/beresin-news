@@ -3,6 +3,7 @@ import type {
     BreakingItem,
     NavCategory,
     SiteSettings,
+    SponsoredArticle,
     Tag,
 } from '@/types/news';
 
@@ -22,6 +23,7 @@ declare module '@inertiajs/core' {
             navCategories: NavCategory[];
             trendingTags: Omit<Tag, 'slug'>[];
             breakingNews: BreakingItem[];
+            sponsoredArticles: SponsoredArticle[];
             site: SiteSettings;
             savedIds: number[];
             unreadNotifications: number;

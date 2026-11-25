@@ -53,6 +53,7 @@ class HandleInertiaRequests extends Middleware
             'navCategories' => fn (): array => $site->categories(),
             'trendingTags' => fn (): array => $site->trendingTags(),
             'breakingNews' => fn (): array => $site->breakingNews(),
+            'sponsoredArticles' => fn (): array => $site->sponsoredArticles(),
             'site' => function () use ($site): array {
                 $weather = $site->weather();
 

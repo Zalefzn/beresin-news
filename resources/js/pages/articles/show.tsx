@@ -6,6 +6,7 @@ import CommentSection from '@/components/news/comment-section';
 import NewsCard from '@/components/news/news-card';
 import { CardSkeleton } from '@/components/news/news-grid-skeleton';
 import PopularList from '@/components/news/popular-list';
+import SponsoredCard from '@/components/news/sponsored-card';
 import SectionHeader from '@/components/news/section-header';
 import SeoHead from '@/components/news/seo-head';
 import ShareButtons from '@/components/news/share-buttons';
@@ -372,6 +373,7 @@ export default function ArticleShow({
                 <aside className="lg:col-span-4">
                     <div className="space-y-6 lg:sticky lg:top-[calc(var(--topbar-h)+5.5rem)]">
                         <PopularList articles={popular} />
+                        <SponsoredCard />
                         <NewsletterCard />
                     </div>
                 </aside>
